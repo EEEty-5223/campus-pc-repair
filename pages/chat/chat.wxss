@@ -29,14 +29,16 @@
 }
 
 .chat-card {
-  padding: 24rpx;
+  padding: 12rpx 24rpx 24rpx;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-list-wrap {
-  height: 880rpx;
-  background: #f8fafc;
-  border-radius: 16rpx;
-  padding: 16rpx 18rpx;
+  flex: 1;                   /* ← 改用 flex: 1 */
+  min-height: 700rpx;        /* ← 兜底最小高度 */
+  max-height: 880rpx;        /* ← 兜底最大高度 */
+  /* height: 880rpx  ← 删掉 */
 }
 
 .chat-list {

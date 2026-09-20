@@ -23,6 +23,7 @@
         <view
           class="chat-msg {{msg.fromClass}}"
           wx:for="{{item.messages}}"
+          wx:for-item="msg"
           wx:key="id"
           id="msg-{{msg.id}}"
         >
@@ -37,7 +38,7 @@
     <view class="chat-input-bar" wx:if="{{item.canReply}}">
       <input
         class="chat-input"
-        placeholder="{{role === 'admin' ? '回复用户…' : '给社团留言…'}}"
+        placeholder="{{role === 'admin' ? '回复用户…' : '与社团沟通'}}"
         value="{{chatText}}"
         maxlength="200"
         confirm-type="send"
