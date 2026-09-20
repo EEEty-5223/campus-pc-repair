@@ -1,0 +1,38 @@
+{
+        "appid": "wx631179467e4fab9e",
+        "projectname": "campus-pc-repair-booking",
+        "compileType": "miniprogram",
+        "miniprogramRoot": "./",
+        "libVersion": "latest",
+        "setting": {
+                "urlCheck": false,
+                "es6": true,
+                "enhance": true,
+                "postcss": true,
+                "minified": true,
+                "coverView": true,
+                "minifyWXSS": true,
+                "minifyWXML": true,
+                "uploadWithSourceMap": true,
+                "compileWorklet": false,
+                "uglifyFileName": false,
+                "packNpmManually": false,
+                "packNpmRelationList": [],
+                "localPlugins": false,
+                "disableUseStrict": false,
+                "useCompilerPlugins": false,
+                "condition": false,
+                "babelSetting": {
+                        "ignore": [],
+                        "disablePlugins": [],
+                        "outputPath": ""
+                }
+        },
+        "packOptions": {
+                "ignore": [],
+                "include": []
+        },
+        "condition": {},
+        "simulatorPluginLibVersion": {},
+        "editorSetting": {}
+}

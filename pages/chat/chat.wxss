@@ -1,0 +1,148 @@
+.chat-page {
+  padding-bottom: 40rpx;
+}
+
+.chat-summary {
+  padding: 24rpx 30rpx;
+}
+
+.chat-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #edf1f7;
+}
+
+.chat-summary-row.no-border {
+  border-bottom: none;
+}
+
+.chat-summary-label {
+  color: #64748b;
+  font-size: 26rpx;
+}
+
+.chat-summary-value {
+  color: #1f2937;
+  font-size: 26rpx;
+}
+
+.chat-card {
+  padding: 24rpx;
+}
+
+.chat-list-wrap {
+  height: 880rpx;
+  background: #f8fafc;
+  border-radius: 16rpx;
+  padding: 16rpx 18rpx;
+}
+
+.chat-list {
+  height: 100%;
+}
+
+.chat-empty {
+  padding: 60rpx 10rpx;
+  color: #94a3b8;
+  font-size: 26rpx;
+  text-align: center;
+}
+
+.chat-msg {
+  display: flex;
+  margin-bottom: 24rpx;
+}
+
+.chat-msg.msg-from-user {
+  justify-content: flex-end;
+}
+
+.chat-msg.msg-from-admin {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 78%;
+  padding: 18rpx 22rpx;
+  border-radius: 18rpx;
+  word-break: break-all;
+}
+
+.msg-from-user .chat-bubble {
+  background: #2563eb;
+  border-top-right-radius: 4rpx;
+}
+
+.msg-from-admin .chat-bubble {
+  background: #ffffff;
+  border: 1rpx solid #dbeafe;
+  border-top-left-radius: 4rpx;
+}
+
+.chat-meta {
+  margin-bottom: 8rpx;
+  font-size: 20rpx;
+  opacity: 0.7;
+}
+
+.msg-from-user .chat-meta,
+.msg-from-user .chat-text {
+  color: #ffffff;
+}
+
+.msg-from-admin .chat-meta {
+  color: #1d4ed8;
+}
+
+.msg-from-admin .chat-text {
+  color: #334155;
+}
+
+.chat-text {
+  font-size: 28rpx;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #edf1f7;
+}
+
+.chat-input {
+  flex: 1;
+  height: 80rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 999rpx;
+}
+
+.chat-send {
+  height: 80rpx;
+  margin: 0 0 0 16rpx;
+  padding: 0 32rpx;
+  color: #ffffff;
+  font-size: 28rpx;
+  line-height: 80rpx;
+  background: #2563eb;
+  border-radius: 999rpx;
+}
+
+.chat-send[disabled] {
+  opacity: 0.6;
+}
+
+.chat-closed {
+  margin-top: 20rpx;
+  padding: 16rpx;
+  color: #94a3b8;
+  font-size: 24rpx;
+  text-align: center;
+}

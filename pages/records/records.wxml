@@ -1,0 +1,45 @@
+<view class="page records-page">
+  <view class="records-head">
+    <view>
+      <view class="records-title">我的预约</view>
+      <view class="records-subtitle">共 {{items.length}} 条本机记录</view>
+    </view>
+    <button class="new-button" bindtap="goBooking">+ 新预约</button>
+  </view>
+
+  <view class="record-filters">
+    <view
+      class="record-filter {{currentFilter === item.value ? 'record-filter-active' : ''}}"
+      wx:for="{{filters}}"
+      wx:key="value"
+      data-filter="{{item.value}}"
+      bindtap="selectFilter"
+    >{{item.label}}</view>
+  </view>
+
+  <view wx:if="{{items.length}}">
+    <view class="card record-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="record-top">
+        <view class="record-device">{{item.deviceType}}</view>
+        <view class="status-pill {{item.statusClass}}">{{item.statusText}}</view>
+      </view>
+      <view class="record-fault">{{item.faultType}} · {{item.description}}</view>
+      <view class="record-meta">
+        <view>📅 {{item.appointmentDate}} {{item.timeSlot}}</view>
+        <view>📍 {{item.location}}</view>
+      </view>
+      <view class="record-reply" wx:if="{{item.latestMessage}}">💬 {{item.latestMessage.fromText}}：{{item.latestMessage.content}}</view>
+      <view class="record-bottom">
+        <text>编号 {{item.id}}</text>
+        <text class="detail-link">查看详情 ›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card empty-state" wx:else>
+    <text class="empty-icon">🧰</text>
+    <text class="empty-title">当前分类暂无预约</text>
+    <text class="muted">切换分类，或提交一条新的维修预约</text>
+    <button class="primary-button empty-button" bindtap="goBooking">预约电脑维修</button>
+  </view>
+</view>

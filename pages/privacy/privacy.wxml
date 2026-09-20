@@ -1,0 +1,21 @@
+<view class="page privacy-page">
+  <view class="card article-card">
+    <view class="article-title">信息使用说明（演示版）</view>
+    <view class="updated">更新日期：2026-09-17</view>
+
+    <view class="article-heading">1. 收集哪些信息</view>
+    <view class="article-text">为完成电脑维修预约，本演示版由用户主动填写姓名、手机号、校内联系地点、设备类型、故障描述和预约时间。</view>
+
+    <view class="article-heading">2. 为什么收集</view>
+    <view class="article-text">上述信息只用于联系预约人、判断故障范围、安排社团成员和反馈处理进度。</view>
+
+    <view class="article-heading">3. 数据保存位置</view>
+    <view class="article-text">当前第一版不连接服务器，预约数据只保存在运行小程序的当前设备本地。清除小程序缓存后，数据可能丢失；不同设备之间不会同步。</view>
+
+    <view class="article-heading">4. 安全提醒</view>
+    <view class="article-text">请勿在故障描述中填写账号、密码、验证码、支付信息等敏感内容。送修前请自行备份重要资料。</view>
+
+    <view class="article-heading">5. 正式发布前</view>
+    <view class="article-text">社团应补充真实主体名称、负责人联系方式、保存期限、删除方式与投诉渠道，并在微信公众平台完成用户隐私保护指引配置。</view>
+  </view>
+</view>

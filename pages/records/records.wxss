@@ -1,0 +1,116 @@
+.records-page {
+  padding-top: 36rpx;
+}
+
+.records-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.records-title {
+  margin-bottom: 8rpx;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.records-subtitle {
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.new-button {
+  height: 68rpx;
+  margin: 0;
+  padding: 0 24rpx;
+  color: #2563eb;
+  font-size: 25rpx;
+  line-height: 68rpx;
+  background: #eff6ff;
+  border-radius: 14rpx;
+}
+
+.record-filters {
+  display: flex;
+  margin-bottom: 24rpx;
+  padding: 8rpx;
+  background: #e9eef6;
+  border-radius: 16rpx;
+}
+
+.record-filter {
+  flex: 1;
+  padding: 15rpx 10rpx;
+  color: #64748b;
+  font-size: 24rpx;
+  text-align: center;
+  border-radius: 12rpx;
+}
+
+.record-filter-active {
+  color: #1d4ed8;
+  font-weight: 700;
+  background: #ffffff;
+  box-shadow: 0 4rpx 14rpx rgba(31, 53, 90, 0.08);
+}
+
+.record-card {
+  padding: 28rpx;
+}
+
+.record-top,
+.record-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.record-device {
+  font-size: 31rpx;
+  font-weight: 700;
+}
+
+.record-fault {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 22rpx 0;
+  color: #475569;
+  font-size: 26rpx;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.record-meta {
+  padding: 20rpx 22rpx;
+  color: #475569;
+  font-size: 24rpx;
+  line-height: 1.9;
+  background: #f8fafc;
+  border-radius: 14rpx;
+}
+
+.record-reply {
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  color: #1e3a8a;
+  font-size: 23rpx;
+  line-height: 1.6;
+  background: #eff6ff;
+  border-radius: 12rpx;
+}
+
+.record-bottom {
+  margin-top: 22rpx;
+  color: #94a3b8;
+  font-size: 22rpx;
+}
+
+.detail-link {
+  color: #2563eb;
+}
+
+.empty-button {
+  margin-top: 36rpx;
+}

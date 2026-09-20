@@ -1,0 +1,58 @@
+<view class="page chat-page" wx:if="{{item}}">
+  <view class="chat-summary card">
+    <view class="chat-summary-row">
+      <text class="chat-summary-label">预约编号</text>
+      <text class="chat-summary-value">{{item.id}}</text>
+    </view>
+    <view class="chat-summary-row no-border">
+      <text class="chat-summary-label">当前状态</text>
+      <text class="chat-summary-value status-pill {{item.statusClass}}">{{item.statusText}}</text>
+    </view>
+  </view>
+
+  <view class="chat-card card">
+    <view class="chat-list-wrap">
+      <scroll-view
+        class="chat-list"
+        scroll-y="true"
+        scroll-into-view="{{scrollIntoView}}"
+        scroll-with-animation="true"
+      >
+        <view wx:if="{{!item.hasMessages}}" class="chat-empty">暂无消息，开始下面的对话吧。</view>
+
+        <view
+          class="chat-msg {{msg.fromClass}}"
+          wx:for="{{item.messages}}"
+          wx:key="id"
+          id="msg-{{msg.id}}"
+        >
+          <view class="chat-bubble">
+            <view class="chat-meta">{{msg.fromText}} · {{msg.atText}}</view>
+            <view class="chat-text">{{msg.content}}</view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class="chat-input-bar" wx:if="{{item.canReply}}">
+      <input
+        class="chat-input"
+        placeholder="{{role === 'admin' ? '回复用户…' : '给社团留言…'}}"
+        value="{{chatText}}"
+        maxlength="200"
+        confirm-type="send"
+        bindinput="onChatInput"
+        bindconfirm="sendMessage"
+      />
+      <button class="chat-send" bindtap="sendMessage" disabled="{{sending}}">发送</button>
+    </view>
+    <view class="chat-closed" wx:else>预约已结束，无法继续发送消息，有问题请再预约</view>
+  </view>
+</view>
+
+<view class="page" wx:else>
+  <view class="card empty-state">
+    <text class="empty-icon">🔎</text>
+    <text class="empty-title">未找到预约</text>
+  </view>
+</view>

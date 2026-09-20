@@ -1,0 +1,79 @@
+<view class="page booking-page">
+  <view class="form-intro">
+    <view class="form-intro-title">{{isEditing ? '修改预约信息' : '填写维修信息'}}</view>
+    <view class="form-intro-desc">{{isEditing ? '只有预约中的预约可以修改' : '请尽量准确描述故障，方便社团成员提前判断'}}</view>
+  </view>
+
+  <form bindsubmit="submitBooking">
+    <view class="card form-card">
+      <view class="group-title">联系信息</view>
+
+      <view class="field">
+        <view class="field-label"><text class="required">*</text> 姓名</view>
+        <input class="field-control" name="name" value="{{formData.name}}" maxlength="20" placeholder="称呼" data-field="name" bindinput="onFormInput" />
+      </view>
+
+      <view class="field">
+        <view class="field-label"><text class="required">*</text> 手机号(仅供联系)</view>
+        <input class="field-control" name="phone" value="{{formData.phone}}" type="number" maxlength="11" placeholder="便于确认预约时间" data-field="phone" bindinput="onFormInput" />
+      </view>
+
+      <view class="field no-border">
+        <view class="field-label"><text class="required">*</text> 校内地点</view>
+        <input class="field-control" name="location" value="{{formData.location}}" maxlength="40" placeholder="例如：15教666" data-field="location" bindinput="onFormInput"/>
+      </view>
+    </view>
+
+    <view class="card form-card">
+      <view class="group-title">设备与故障</view>
+
+      <view class="field">
+        <view class="field-label">设备类型</view>
+        <picker mode="selector" range="{{deviceTypes}}" value="{{deviceIndex}}" bindchange="onDeviceChange">
+          <view class="picker-control">{{deviceTypes[deviceIndex]}} <text>⌄</text></view>
+        </picker>
+      </view>
+
+      <view class="field">
+        <view class="field-label">故障类别</view>
+        <picker mode="selector" range="{{faultTypes}}" value="{{faultIndex}}" bindchange="onFaultChange">
+          <view class="picker-control">{{faultTypes[faultIndex]}} <text>⌄</text></view>
+        </picker>
+      </view>
+
+      <view class="field no-border field-block">
+        <view class="field-label"><text class="required">*</text> 故障描述</view>
+        <textarea class="textarea-control" name="description" value="{{formData.description}}" maxlength="300" placeholder="例如：开机后反复蓝屏....卡顿....打不开....开机没反应...." data-field="description" bindinput="onFormInput"/>
+      </view>
+    </view>
+
+    <view class="card form-card">
+      <view class="group-title">预约时间</view>
+
+      <view class="field">
+        <view class="field-label">日期</view>
+        <picker mode="date" value="{{appointmentDate}}" start="{{minDate}}" bindchange="onDateChange">
+          <view class="picker-control">{{appointmentDate}} <text>⌄</text></view>
+        </picker>
+      </view>
+
+      <view class="field no-border">
+        <view class="field-label">时间段</view>
+        <picker mode="selector" range="{{timeSlots}}" value="{{timeIndex}}" bindchange="onTimeChange">
+          <view class="picker-control">{{timeSlots[timeIndex]}} <text>⌄</text></view>
+        </picker>
+      </view>
+    </view>
+
+    <checkbox-group class="agreement" name="agreement">
+      <label class="agreement-label">
+        <checkbox value="agreed" checked="{{isEditing}}" color="#2563EB" />
+        <text>我已阅读并同意</text>
+      </label>
+      <text class="privacy-link" bindtap="goPrivacy">《信息使用说明》</text>
+    </checkbox-group>
+
+    <button class="secondary-button" bindtap="saveDraft" wx:if="{{!isEditing}}">保存草稿</button>
+    <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting}}">{{isEditing ? '保存修改' : '提交预约'}}</button>
+  </form>
+</view>

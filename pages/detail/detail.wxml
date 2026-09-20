@@ -1,0 +1,66 @@
+<view class="page detail-page" wx:if="{{item}}">
+  <view class="status-card card">
+    <view class="status-pill {{item.statusClass}}">{{item.statusText}}</view>
+    <view class="status-title">预约编号 {{item.id}}</view>
+    <view class="status-desc">提交于 {{item.createdAtText}}</view>
+  </view>
+
+  <view class="card detail-card">
+    <view class="detail-section-title">预约安排</view>
+    <view class="detail-row">
+      <text class="detail-label">预约日期</text>
+      <text class="detail-value">{{item.appointmentDate}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-label">时间段</text>
+      <text class="detail-value">{{item.timeSlot}}</text>
+    </view>
+    <view class="detail-row no-border">
+      <text class="detail-label">联系地点</text>
+      <text class="detail-value">{{item.location}}</text>
+    </view>
+  </view>
+
+  <view class="card detail-card">
+    <view class="detail-section-title">设备信息</view>
+    <view class="detail-row">
+      <text class="detail-label">设备类型</text>
+      <text class="detail-value">{{item.deviceType}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-label">故障类别</text>
+      <text class="detail-value">{{item.faultType}}</text>
+    </view>
+    <view class="description-block">
+      <view class="detail-label">故障描述</view>
+      <view class="description-text">{{item.description}}</view>
+    </view>
+  </view>
+
+  <view class="card detail-card">
+    <view class="detail-section-title">联系方式</view>
+    <view class="detail-row">
+      <text class="detail-label">联系人</text>
+      <text class="detail-value">{{item.name}}</text>
+    </view>
+    <view class="detail-row no-border">
+      <text class="detail-label">手机号</text>
+      <text class="detail-value">{{item.phone}}</text>
+    </view>
+  </view>
+
+  <view class="tip-card">提示：维修前请自行备份重要文件，不要在故障描述中填写账号或密码。</view>
+
+  <view class="detail-actions">
+    <button class="primary-button chat-cta" bindtap="goChat">点击与社团沟通</button>
+    <button class="secondary-button" wx:if="{{item.canEdit}}" bindtap="editBooking">修改预约</button>
+    <button class="danger-button" wx:if="{{item.canCancel}}" bindtap="cancelBooking">取消预约</button>
+  </view>
+</view>
+
+<view class="page" wx:else>
+  <view class="card empty-state">
+    <text class="empty-icon">🔎</text>
+    <text class="empty-title">未找到预约</text>
+  </view>
+</view>

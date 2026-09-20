@@ -1,0 +1,40 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/booking/booking",
+    "pages/records/records",
+    "pages/detail/detail",
+    "pages/chat/chat",
+    "pages/admin/admin",
+    "pages/privacy/privacy"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#2563EB",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "校园电脑维修",
+    "backgroundColor": "#F5F7FB",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#64748B",
+    "selectedColor": "#2563EB",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "./images/home.png",
+        "selectedIconPath": "./images/home_selected.png"
+      },
+      {
+        "pagePath": "pages/records/records",
+        "text": "我的预约",
+        "iconPath": "./images/book.png",
+        "selectedIconPath": "./images/book_selected.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

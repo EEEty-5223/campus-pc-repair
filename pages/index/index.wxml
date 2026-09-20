@@ -1,0 +1,40 @@
+<view class="page home-page">
+  <view class="hero">
+    <view class="hero-badge">电脑e家社团服务</view>
+    <view class="hero-title">电脑出问题？<br />先预约，再处理</view>
+    <view class="hero-desc">面向校内同学的电脑检测与基础维修预约服务</view>
+    <button class="hero-button" bindtap="goBooking">立即预约维修</button>
+    <view class="hero-record" bindtap="goRecords">
+      已有 {{recordCount}} 条本机预约记录，点击查看 ›
+    </view>
+  </view>
+
+  <view class="section-title">可预约服务</view>
+  <view class="service-grid">
+    <view class="service-card" wx:for="{{services}}" wx:key="name">
+      <view class="service-icon">{{item.icon}}</view>
+      <view class="service-name">{{item.name}}</view>
+      <view class="service-desc">{{item.desc}}</view>
+    </view>
+  </view>
+
+  <view class="section-title">服务流程</view>
+  <view class="card process-card">
+    <view class="process-item" wx:for="{{steps}}" wx:key="number">
+      <view class="step-number">{{item.number}}</view>
+      <view class="step-content">
+        <view class="step-title">{{item.title}}</view>
+        <view class="step-desc">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="notice card">
+    <view class="notice-title">预约前请注意</view>
+    <view class="notice-line">· 重要资料请提前备份，维修存在数据风险</view>
+    <view class="notice-line">· 提交后状态为“预约中”，社团确认后显示“预约成功”并回复</view>
+    <view class="notice-line">· 检测后如需购买配件，会先征得本人同意</view>
+  </view>
+
+  <view class="admin-entry" bindtap="goAdmin">社团成员演示后台 ›</view>
+</view>

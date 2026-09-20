@@ -1,0 +1,294 @@
+.status-card {
+  padding: 38rpx 30rpx;
+  text-align: center;
+}
+
+.chat-card {
+  padding: 12rpx 24rpx 24rpx;
+}
+
+.chat-list {
+  max-height: 560rpx;
+  padding: 8rpx 0;
+}
+
+.chat-empty {
+  padding: 30rpx 10rpx;
+  color: #94a3b8;
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.chat-msg {
+  display: flex;
+  margin-bottom: 20rpx;
+}
+
+.chat-msg.msg-from-user {
+  justify-content: flex-end;
+}
+
+.chat-msg.msg-from-admin {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 78%;
+  padding: 18rpx 22rpx;
+  border-radius: 18rpx;
+}
+
+.msg-from-user .chat-bubble {
+  background: #2563eb;
+  border-top-right-radius: 4rpx;
+}
+
+.msg-from-admin .chat-bubble {
+  background: #eff6ff;
+  border: 1rpx solid #dbeafe;
+  border-top-left-radius: 4rpx;
+}
+
+.chat-meta {
+  margin-bottom: 8rpx;
+  font-size: 20rpx;
+  opacity: 0.7;
+}
+
+.msg-from-user .chat-meta,
+.msg-from-user .chat-text {
+  color: #ffffff;
+}
+
+.msg-from-admin .chat-meta {
+  color: #1d4ed8;
+}
+
+.msg-from-admin .chat-text {
+  color: #334155;
+}
+
+.chat-text {
+  font-size: 26rpx;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 12rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #edf1f7;
+}
+
+.chat-input {
+  flex: 1;
+  height: 76rpx;
+  padding: 0 22rpx;
+  font-size: 26rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 999rpx;
+}
+
+.chat-send {
+  height: 76rpx;
+  margin: 0 0 0 16rpx;
+  padding: 0 30rpx;
+  color: #ffffff;
+  font-size: 26rpx;
+  line-height: 76rpx;
+  background: #2563eb;
+  border-radius: 999rpx;
+}
+
+.chat-closed {
+  margin-top: 16rpx;
+  padding: 16rpx;
+  color: #94a3b8;
+  font-size: 23rpx;
+  text-align: center;
+}
+
+.reply-content {
+  margin: 18rpx 0 10rpx;
+  padding: 22rpx;
+  color: #1e3a8a;
+  font-size: 26rpx;
+  line-height: 1.7;
+  background: #eff6ff;
+  border-radius: 14rpx;
+}
+
+.reply-time {
+  color: #94a3b8;
+  font-size: 22rpx;
+}
+
+.reply-empty {
+  padding: 20rpx 0 24rpx;
+  color: #94a3b8;
+  font-size: 24rpx;
+}
+
+.status-title {
+  margin: 26rpx 0 10rpx;
+  font-size: 31rpx;
+  font-weight: 700;
+}
+
+.status-desc {
+  color: #94a3b8;
+  font-size: 23rpx;
+}
+
+.detail-card {
+  padding: 12rpx 30rpx;
+}
+
+.detail-section-title {
+  padding: 24rpx 0 10rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #edf1f7;
+}
+
+.detail-row.no-border {
+  border-bottom: 0;
+}
+
+.detail-label {
+  color: #64748b;
+  font-size: 25rpx;
+}
+
+.detail-value {
+  max-width: 440rpx;
+  font-size: 26rpx;
+  text-align: right;
+}
+
+.description-block {
+  padding: 24rpx 0;
+}
+
+.description-text {
+  margin-top: 16rpx;
+  padding: 22rpx;
+  color: #334155;
+  font-size: 26rpx;
+  line-height: 1.7;
+  background: #f8fafc;
+  border-radius: 14rpx;
+}
+
+.tip-card {
+  margin: 12rpx 0 28rpx;
+  padding: 24rpx;
+  color: #854d0e;
+  font-size: 23rpx;
+  line-height: 1.6;
+  background: #fefce8;
+  border: 1rpx solid #fef08a;
+  border-radius: 16rpx;
+}
+
+.timeline-card {
+  padding: 12rpx 30rpx 28rpx;
+}
+
+.timeline-item {
+  display: flex;
+  min-height: 126rpx;
+}
+
+.timeline-rail {
+  display: flex;
+  flex: 0 0 38rpx;
+  align-items: center;
+  flex-direction: column;
+  margin-right: 18rpx;
+  padding-top: 12rpx;
+}
+
+.timeline-dot {
+  box-sizing: border-box;
+  width: 24rpx;
+  height: 24rpx;
+  border: 6rpx solid #94a3b8;
+  border-radius: 50%;
+}
+
+.timeline-dot.status-pending {
+  border-color: #eab308;
+}
+
+.timeline-dot.status-accepted {
+  border-color: #2563eb;
+}
+
+.timeline-dot.status-repairing {
+  border-color: #9333ea;
+}
+
+.timeline-dot.status-completed {
+  border-color: #16a34a;
+}
+
+.timeline-dot.status-cancelled {
+  border-color: #94a3b8;
+}
+
+.timeline-line {
+  flex: 1;
+  width: 2rpx;
+  min-height: 78rpx;
+  background: #e2e8f0;
+}
+
+.timeline-content {
+  flex: 1;
+  padding-bottom: 28rpx;
+}
+
+.timeline-heading {
+  font-weight: 700;
+}
+
+.timeline-note {
+  margin-top: 6rpx;
+  color: #475569;
+  font-size: 24rpx;
+}
+
+.timeline-time {
+  margin-top: 6rpx;
+  color: #94a3b8;
+  font-size: 22rpx;
+}
+
+.detail-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 16rpx;
+  padding: 0 20rpx;
+  }
+
+.detail-actions .primary-button,
+.detail-actions .secondary-button,
+.detail-actions .danger-button {
+  flex: 1;
+  height: 72rpx;
+  line-height: 72rpx;
+  font-size: 26rpx;
+  padding: 0;
+  margin: 0;
+}
