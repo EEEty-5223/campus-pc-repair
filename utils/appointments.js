@@ -59,7 +59,7 @@ function decorate(item) {
   copy.latestMessage = copy.messages.length
     ? copy.messages[copy.messages.length - 1]
     : null
-  copy.canReply = copy.status !== 'cancelled'
+  copy.canReply = copy.status !== 'cancelled' && copy.status !== 'completed'
   copy.history = getHistory(copy).map(function (entry) {
     return Object.assign({}, entry, {
       statusText: STATUS_LABELS[entry.status] || '未知状态',

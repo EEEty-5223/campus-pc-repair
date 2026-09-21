@@ -35,10 +35,8 @@
 }
 
 .chat-list-wrap {
-  flex: 1;                   /* ← 改用 flex: 1 */
-  min-height: 700rpx;        /* ← 兜底最小高度 */
-  max-height: 880rpx;        /* ← 兜底最大高度 */
-  /* height: 880rpx  ← 删掉 */
+  height: calc(100vh - 380rpx);   /* 减去顶+底的预估高度 */
+  overflow: hidden;
 }
 
 .chat-list {
