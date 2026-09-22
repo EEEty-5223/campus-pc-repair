@@ -58,7 +58,7 @@
         <textarea
           class="reply-input"
           placeholder="快速回复，发送后进入沟通记录"
-          maxlength="200"
+          maxlength="30"
           value="{{draftReplies[item.id]}}"
           data-id="{{item.id}}"
           bindinput="onReplyInput"

@@ -2,7 +2,7 @@
   <view class="records-head">
     <view>
       <view class="records-title">我的预约</view>
-      <view class="records-subtitle">共 {{items.length}} 条本机记录</view>
+      <view class="records-subtitle">共 {{items.length}} 条本机记录（点击查看详细可以对话）</view>
     </view>
     <button class="new-button" bindtap="goBooking">+ 新预约</button>
   </view>

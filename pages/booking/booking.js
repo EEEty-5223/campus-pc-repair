@@ -290,21 +290,27 @@ Page({
       title: this.data.isEditing ? '修改已保存' : '预约已提交',
       content: this.data.isEditing
         ? '预约信息已经更新。'
-        : '当前为本机演示数据。社团确认后，可在“我的预约”中查看状态。',
-      showCancel: false,
-      confirmText: '知道了',
-      success: function () {
-        if (this.data.isEditing) {
-          wx.navigateBack()
-        } else {
-          clearDraftFromStorage()//弹保存草稿
-          this.setData({ dirty: false })
-          if (wx.disableAlertBeforeUnload) {
-            wx.disableAlertBeforeUnload()
+        : '您的预约已提交,可在"我的预约"中查看进度。社团成员确认后会通过本小程序与您沟通。',
+        showCancel: true,
+        confirmText: '查看预约',
+        cancelText: '留在首页',
+        confirmColor: '#2563EB',
+        success: function (res) {
+          if (!this.data.isEditing) {
+            clearDraftFromStorage()
+            this.setData({ dirty: false })
+            if (wx.disableAlertBeforeUnload) {
+              wx.disableAlertBeforeUnload()
+            }
           }
-          wx.switchTab({ url: '/pages/records/records' })
-        }
-      }.bind(this),
+          if (res.confirm) {
+            // 点"查看预约" → 跳我的预约
+            wx.switchTab({ url: '/pages/records/records' })
+          } else {
+            // 点"留在首页" → 跳首页
+            wx.switchTab({ url: '/pages/index/index' })
+          }
+        }.bind(this),        
       complete: function () {
         this.setData({ submitting: false })
       }.bind(this)

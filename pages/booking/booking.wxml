@@ -73,7 +73,9 @@
       <text class="privacy-link" bindtap="goPrivacy">《信息使用说明》</text>
     </checkbox-group>
 
-    <button class="secondary-button" bindtap="saveDraft" wx:if="{{!isEditing}}">保存草稿</button>
-    <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting}}">{{isEditing ? '保存修改' : '提交预约'}}</button>
+    <view class="form-actions">
+      <button class="secondary-button" bindtap="saveDraft" wx:if="{{!isEditing}}">保存草稿</button>
+      <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting}}">{{isEditing ? '保存修改' : '提交预约'}}</button>
+    </view>
   </form>
 </view>

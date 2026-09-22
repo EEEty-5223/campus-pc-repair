@@ -102,3 +102,11 @@
 .submit-button {
   width: 100%;
 }
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;        /* ← 间距,自己改大小 */
+  padding: 0 24rpx;
+  margin-top: 24rpx;  /* ← 跟上方 checkbox 的距离 */
+}

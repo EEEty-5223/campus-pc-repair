@@ -4,7 +4,15 @@
     <view class="status-title">预约编号 {{item.id}}</view>
     <view class="status-desc">提交于 {{item.createdAtText}}</view>
   </view>
+  <view class="tip-card">提示：维修前请自行备份重要文件，不要在故障描述中填写账号或密码。</view>
 
+  <view class="detail-actions">
+    <button class="primary-button chat-cta" bindtap="goChat">点击与社团沟通</button>
+    <button class="secondary-button" wx:if="{{item.canEdit}}" bindtap="editBooking">修改预约</button>
+    <button class="danger-button" wx:if="{{item.canCancel}}" bindtap="cancelBooking">取消预约</button>
+  </view>
+
+  
   <view class="card detail-card">
     <view class="detail-section-title">预约安排</view>
     <view class="detail-row">
@@ -49,13 +57,6 @@
     </view>
   </view>
 
-  <view class="tip-card">提示：维修前请自行备份重要文件，不要在故障描述中填写账号或密码。</view>
-
-  <view class="detail-actions">
-    <button class="primary-button chat-cta" bindtap="goChat">点击与社团沟通</button>
-    <button class="secondary-button" wx:if="{{item.canEdit}}" bindtap="editBooking">修改预约</button>
-    <button class="danger-button" wx:if="{{item.canCancel}}" bindtap="cancelBooking">取消预约</button>
-  </view>
 </view>
 
 <view class="page" wx:else>

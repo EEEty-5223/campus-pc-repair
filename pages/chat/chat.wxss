@@ -77,7 +77,7 @@
 
 .msg-from-admin .chat-bubble {
   background: #ffffff;
-  border: 1rpx solid #dbeafe;
+  border: 8rpx solid #dbeafe;
   border-top-left-radius: 4rpx;
 }
 
