@@ -1,4 +1,6 @@
 var appointments = require('../../utils/appointments')
+var api = require('../../utils/api-request.js')
+var USE_BACKEND = true   // 切换:走后端 API / 本地存储
 
 Page({
   data: {
@@ -22,6 +24,36 @@ Page({
   },
 
   loadItems: function () {
+    var self = this
+    if (USE_BACKEND) {
+      // === 走后端 API ===
+      var app = getApp()
+      var openid = (app && app.globalData && app.globalData.openid) || ''
+      if (!openid) {
+        // openid 还没拿到（silentLogin 异步），先用本地占位
+        self.setData({ allItems: appointments.list() })
+        self.applyFilter()
+        return
+      }
+      api.getMyAppointments(openid)
+        .then(function (resp) {
+          var list = (resp && resp.list) || []
+          // 统一加前端需要的状态文本/类名（appointments.decorate 提供）
+          var decorated = list.map(function (item) {
+            return appointments.decorate ? appointments.decorate(item) : item
+          })
+          self.setData({ allItems: decorated })
+          self.applyFilter()
+        })
+        .catch(function (err) {
+          // 后端拉取失败回退本地
+          console.error('[records] 拉取后端预约失败:', err.message)
+          self.setData({ allItems: appointments.list() })
+          self.applyFilter()
+        })
+      return
+    }
+    // === 走本地 ===
     this.setData({ allItems: appointments.list() })
     this.applyFilter()
   },

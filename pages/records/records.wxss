@@ -23,7 +23,7 @@
 .new-button {
   height: 68rpx;
   margin: 0;
-  padding: 0 24rpx;
+  padding: 1rpx;
   color: #2563eb;
   font-size: 25rpx;
   line-height: 68rpx;

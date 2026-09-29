@@ -404,5 +404,6 @@ module.exports = {
   canTransition: canTransition,
   updateStatus: updateStatus,
   replyTo: replyTo,
-  addMessage: addMessage
+  addMessage: addMessage,
+  decorate: decorate
 }

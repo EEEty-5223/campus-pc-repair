@@ -1,4 +1,6 @@
 var appointments = require('../../utils/appointments')
+var api = require('../../utils/api-request.js')
+var USE_BACKEND = true
 
 Page({
   data: {
@@ -17,9 +19,26 @@ Page({
   },
 
   onShow: function () {
-    this.setData({
-      recordCount: appointments.list().length
-    })
+    var self = this
+    if (USE_BACKEND) {
+      var app = getApp()
+      var openid = (app && app.globalData && app.globalData.openid) || ''
+      if (!openid) {
+        self.setData({ recordCount: appointments.list().length })
+        return
+      }
+      api.getMyAppointments(openid)
+        .then(function (resp) {
+          var list = (resp && resp.list) || []
+          self.setData({ recordCount: list.length })
+        })
+        .catch(function (err) {
+          console.error('[index] 拉取预约计数失败:', err.message)
+          self.setData({ recordCount: appointments.list().length })
+        })
+      return
+    }
+    self.setData({ recordCount: appointments.list().length })
   },
 
   goBooking: function () {

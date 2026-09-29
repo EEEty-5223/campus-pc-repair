@@ -1,4 +1,6 @@
 var appointments = require('../../utils/appointments')
+var api = require('../../utils/api-request.js')
+var USE_BACKEND = true   // 切换:走后端 API / 本地存储
 var DRAFT_KEY = 'campus…t_v1'
 
 function formatDate(date) {
@@ -115,39 +117,66 @@ Page({
   },  
 
   loadForEdit: function (id) {
-    var item = appointments.getById(id)
-    if (!item || !item.canEdit) {
-      wx.showModal({
-        title: '无法修改',
-        content: '只有待确认的预约可以修改。',
-        showCancel: false,
-        success: function () {
-          wx.navigateBack()
+    var self = this
+    var applyEdit = function (item) {
+      if (!item || !item.canEdit) {
+        wx.showModal({
+          title: '无法修改',
+          content: '只有待确认的预约可以修改。',
+          showCancel: false,
+          success: function () {
+            wx.navigateBack()
+          }
+        })
+        return
+      }
+
+      var deviceIndex = self.data.deviceTypes.indexOf(item.deviceType)
+      var faultIndex = self.data.faultTypes.indexOf(item.faultType)
+      var timeIndex = self.data.timeSlots.indexOf(item.timeSlot)
+      wx.setNavigationBarTitle({ title: '修改预约' })
+      self.setData({
+        editId: id,
+        isEditing: true,
+        deviceIndex: deviceIndex >= 0 ? deviceIndex : 0,
+        faultIndex: faultIndex >= 0 ? faultIndex : 0,
+        timeIndex: timeIndex >= 0 ? timeIndex : 0,
+        appointmentDate: item.appointmentDate,
+        formData: {
+          name: item.name,
+          phone: item.phone,
+          location: item.location,
+          description: item.description
         }
       })
+    }
+
+    if (USE_BACKEND) {
+      var app = getApp()
+      var openid = (app && app.globalData && app.globalData.openid) || ''
+      api.getMyAppointments(openid)
+        .then(function (resp) {
+          var list = (resp && resp.list) || []
+          var found = list.find(function (x) { return x.id === id }) || null
+          if (!found) {
+            // 可能是管理员视角
+            return api.getAdminAppointments().then(function (resp2) {
+              var all = (resp2 && resp2.list) || []
+              return all.find(function (x) { return x.id === id }) || null
+            })
+          }
+          return found
+        })
+        .then(function (item) {
+          applyEdit(item ? appointments.decorate(item) : null)
+        })
+        .catch(function (err) {
+          console.error('[booking] 载入修改失败:', err.message)
+          applyEdit(appointments.getById(id))
+        })
       return
     }
-    
-
-    var deviceIndex = this.data.deviceTypes.indexOf(item.deviceType)
-    var faultIndex = this.data.faultTypes.indexOf(item.faultType)
-    var timeIndex = this.data.timeSlots.indexOf(item.timeSlot)
-    wx.setNavigationBarTitle({ title: '修改预约' })
-    this.setData({
-      editId: id,
-      isEditing: true,
-      deviceIndex: deviceIndex >= 0 ? deviceIndex : 0,
-      faultIndex: faultIndex >= 0 ? faultIndex : 0,
-      timeIndex: timeIndex >= 0 ? timeIndex : 0,
-      appointmentDate: item.appointmentDate,
-      formData: {
-        name: item.name,
-        phone: item.phone,
-        location: item.location,
-        description: item.description
-      }
-    })
-    
+    applyEdit(appointments.getById(id))
   },
 
   onDeviceChange: function (event) {
@@ -275,45 +304,111 @@ Page({
   },
 
   saveBooking: function (payload) {
-    this.setData({ submitting: true })
+    var self = this
+    self.setData({ submitting: true })
 
-    var saved = this.data.isEditing
-      ? appointments.update(this.data.editId, payload)
+    if (USE_BACKEND) {
+      // === 走后端 API ===
+      var app = getApp()
+      var openid = (app && app.globalData && app.globalData.openid) || ''
+
+      // 把 payload + openid 一起发给后端
+      var remotePayload = {
+        userOpenid: openid,
+        name: payload.name,
+        phone: payload.phone,
+        location: payload.location,
+        deviceType: payload.deviceType,
+        faultType: payload.faultType,
+        description: payload.description,
+        date: payload.appointmentDate,
+        timeSlot: payload.timeSlot
+      }
+
+      var doPromise = self.data.isEditing
+        ? api.updateAppointment(self.data.editId, {
+            name: payload.name,
+            phone: payload.phone,
+            location: payload.location,
+            deviceType: payload.deviceType,
+            faultType: payload.faultType,
+            description: payload.description,
+            date: payload.appointmentDate,
+            timeSlot: payload.timeSlot
+          })
+        : api.createAppointment(remotePayload)
+
+      doPromise
+        .then(function (resp) {
+          self.setData({ submitting: false })
+          wx.showModal({
+            title: self.data.isEditing ? '修改已保存' : '预约已提交',
+            content: self.data.isEditing
+              ? '预约信息已经更新。'
+              : '您的预约已提交,可在"我的预约"中查看进度。社团成员确认后会通过本小程序与您沟通。',
+            showCancel: true,
+            confirmText: '查看预约',
+            cancelText: '留在首页',
+            confirmColor: '#2563EB',
+            success: function (res) {
+              if (!self.data.isEditing) {
+                clearDraftFromStorage()
+                self.setData({ dirty: false })
+                if (wx.disableAlertBeforeUnload) {
+                  wx.disableAlertBeforeUnload()
+                }
+              }
+              if (res.confirm) {
+                wx.switchTab({ url: '/pages/records/records' })
+              } else {
+                wx.switchTab({ url: '/pages/index/index' })
+              }
+            }
+          })
+        })
+        .catch(function (err) {
+          self.setData({ submitting: false })
+          self.showError('后端保存失败:' + (err.message || err))
+        })
+      return
+    }
+
+    // === 走本地存储(回退路径) ===
+    var saved = self.data.isEditing
+      ? appointments.update(self.data.editId, payload)
       : appointments.create(payload)
 
     if (!saved) {
-      this.setData({ submitting: false })
-      return this.showError('保存失败，预约状态可能已经变化')
+      self.setData({ submitting: false })
+      return self.showError('保存失败，预约状态可能已经变化')
     }
 
     wx.showModal({
-      title: this.data.isEditing ? '修改已保存' : '预约已提交',
-      content: this.data.isEditing
+      title: self.data.isEditing ? '修改已保存' : '预约已提交',
+      content: self.data.isEditing
         ? '预约信息已经更新。'
         : '您的预约已提交,可在"我的预约"中查看进度。社团成员确认后会通过本小程序与您沟通。',
-        showCancel: true,
-        confirmText: '查看预约',
-        cancelText: '留在首页',
-        confirmColor: '#2563EB',
-        success: function (res) {
-          if (!this.data.isEditing) {
-            clearDraftFromStorage()
-            this.setData({ dirty: false })
-            if (wx.disableAlertBeforeUnload) {
-              wx.disableAlertBeforeUnload()
-            }
+      showCancel: true,
+      confirmText: '查看预约',
+      cancelText: '留在首页',
+      confirmColor: '#2563EB',
+      success: function (res) {
+        if (!self.data.isEditing) {
+          clearDraftFromStorage()
+          self.setData({ dirty: false })
+          if (wx.disableAlertBeforeUnload) {
+            wx.disableAlertBeforeUnload()
           }
-          if (res.confirm) {
-            // 点"查看预约" → 跳我的预约
-            wx.switchTab({ url: '/pages/records/records' })
-          } else {
-            // 点"留在首页" → 跳首页
-            wx.switchTab({ url: '/pages/index/index' })
-          }
-        }.bind(this),        
+        }
+        if (res.confirm) {
+          wx.switchTab({ url: '/pages/records/records' })
+        } else {
+          wx.switchTab({ url: '/pages/index/index' })
+        }
+      },
       complete: function () {
-        this.setData({ submitting: false })
-      }.bind(this)
+        self.setData({ submitting: false })
+      }
     })
   },
 
