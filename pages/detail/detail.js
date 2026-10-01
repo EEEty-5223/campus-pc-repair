@@ -20,7 +20,16 @@ Page({
   },
 
   onShow: function () {
-    this.loadItem()
+    var self = this
+    var app = getApp()
+    // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
+    if (app && app.globalData && app.globalData.loginReady) {
+      app.globalData.loginReady
+        .then(function () { self.loadItem() })
+        .catch(function () { self.loadItem() })
+    } else {
+      self.loadItem()
+    }
   },
 
   loadItem: function () {

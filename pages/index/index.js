@@ -20,6 +20,22 @@ Page({
 
   onShow: function () {
     var self = this
+    var app = getApp()
+    // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
+    var doLoad = function () {
+      self.loadRecordCount()
+    }
+    if (app && app.globalData && app.globalData.loginReady) {
+      app.globalData.loginReady
+        .then(doLoad)
+        .catch(doLoad)
+    } else {
+      doLoad()
+    }
+  },
+
+  loadRecordCount: function () {
+    var self = this
     if (USE_BACKEND) {
       var app = getApp()
       var openid = (app && app.globalData && app.globalData.openid) || ''
@@ -47,6 +63,10 @@ Page({
 
   goRecords: function () {
     wx.switchTab({ url: '/pages/records/records' })
+  },
+
+  goConsult: function () {
+    wx.navigateTo({ url: '/pages/consult/consult' })
   },
 
   goAdmin: function () {

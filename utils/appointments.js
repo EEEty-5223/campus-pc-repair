@@ -155,6 +155,13 @@ function hasActiveDuplicate(phone, appointmentDate, timeSlot, excludeId) {
   })
 }
 
+function clearDemoData() {
+  var items = readAll().filter(function (item) {
+    return !item.isDemo
+  })
+  writeAll(items)
+}
+
 function seedDemoData() {
   if (readAll().length) {
     return false
@@ -400,6 +407,7 @@ module.exports = {
   create: create,
   hasActiveDuplicate: hasActiveDuplicate,
   seedDemoData: seedDemoData,
+  clearDemoData: clearDemoData,
   update: update,
   canTransition: canTransition,
   updateStatus: updateStatus,

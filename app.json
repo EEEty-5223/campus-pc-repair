@@ -1,12 +1,13 @@
 {
         "pages": [
-                "pages/index/index",
-                "pages/booking/booking",
-                "pages/records/records",
-                "pages/detail/detail",
-                "pages/chat/chat",
-                "pages/admin/admin",
-                "pages/privacy/privacy"
+		"pages/index/index",
+		"pages/booking/booking",
+		"pages/records/records",
+		"pages/consult/consult",
+		"pages/detail/detail",
+		"pages/chat/chat",
+		"pages/admin/admin",
+		"pages/privacy/privacy"
         ],
         "window": {
                 "navigationBarBackgroundColor": "#2563EB",

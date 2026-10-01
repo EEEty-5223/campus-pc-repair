@@ -168,6 +168,39 @@
   line-height: 1.65;
 }
 
+.consult-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 30rpx;
+  margin-top: 28rpx;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  border: 1rpx solid #dbeafe;
+}
+
+.consult-entry-main {
+  flex: 1;
+}
+
+.consult-entry-title {
+  margin-bottom: 10rpx;
+  color: #1d4ed8;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.consult-entry-desc {
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.consult-entry-arrow {
+  flex: 0 0 auto;
+  color: #2563eb;
+  font-size: 44rpx;
+  font-weight: 300;
+}
+
 .admin-entry {
   padding: 20rpx 0 8rpx;
   color: #64748b;

@@ -9,6 +9,14 @@
     </view>
   </view>
 
+  <view class="card consult-entry" bindtap="goConsult">
+    <view class="consult-entry-main">
+      <view class="consult-entry-title">💬 快速沟通</view>
+      <view class="consult-entry-desc">有疑问？一键进入进行中的预约沟通</view>
+    </view>
+    <view class="consult-entry-arrow">›</view>
+  </view>
+
   <view class="section-title">可预约服务</view>
   <view class="service-grid">
     <view class="service-card" wx:for="{{services}}" wx:key="name">

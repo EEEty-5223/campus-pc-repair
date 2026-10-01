@@ -1,0 +1,109 @@
+.consult-page {
+  padding-top: 36rpx;
+}
+
+.consult-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.consult-title {
+  margin-bottom: 8rpx;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.consult-subtitle {
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.consult-card {
+  padding: 28rpx;
+}
+
+.consult-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.consult-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.consult-top {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.consult-device {
+  font-size: 31rpx;
+  font-weight: 700;
+}
+
+.consult-fault {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 14rpx;
+  color: #475569;
+  font-size: 26rpx;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.consult-meta {
+  color: #94a3b8;
+  font-size: 23rpx;
+}
+
+.consult-action {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.consult-button {
+  width: fit-content !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 52rpx !important;
+  margin: 0 !important;
+  padding: 0 20rpx !important;
+  color: #ffffff !important;
+  font-size: 22rpx !important;
+  font-weight: 700;
+  line-height: normal !important;
+  background: #2563eb !important;
+  border-radius: 999rpx !important;
+  box-shadow: none !important;
+}
+
+.consult-button::after {
+  border: 0 !important;
+  width: auto !important;
+}
+
+
+.consult-button::after {
+  border: 0;
+}
+
+.consult-button:active {
+  background: #1d4ed8;
+}
+
+.empty-button {
+  margin-top: 36rpx;
+}
