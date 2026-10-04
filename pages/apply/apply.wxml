@@ -1,0 +1,101 @@
+<view class="page apply-page">
+  <view class="apply-head">
+    <view class="apply-title">申请加入社团</view>
+    <view class="apply-subtitle">输入邀请码并填写信息，等待审核</view>
+  </view>
+
+  <!-- 已是管理员 -->
+  <view wx:if="{{isAdmin}}" class="card empty-state">
+    <text class="empty-icon">✅</text>
+    <text class="empty-title">你已是社团成员</text>
+    <text class="muted">无需再次申请，可直接进入后台</text>
+  </view>
+
+  <!-- 已有申请：显示状态 -->
+  <view wx:elif="{{application && !loadingStatus}}" class="card status-card">
+    <view class="status-row">
+      <text class="status-label">申请状态</text>
+      <text class="status-pill status-{{application.status}}">{{statusText}}</text>
+    </view>
+    <view class="status-row">
+      <text class="status-label">姓名</text>
+      <text class="status-value">{{application.name}}</text>
+    </view>
+    <view class="status-row">
+      <text class="status-label">部门</text>
+      <text class="status-value">{{application.department}}</text>
+    </view>
+    <view wx:if="{{application.student_id}}" class="status-row">
+      <text class="status-label">学号</text>
+      <text class="status-value">{{application.student_id}}</text>
+    </view>
+    <view class="status-row no-border">
+      <text class="status-label">提交时间</text>
+      <text class="status-value">{{application.created_at}}</text>
+    </view>
+
+    <view wx:if="{{application.status === 'rejected'}}" class="status-tip">
+      申请被拒绝。请确认邀请码正确后，重新填写下方表单提交。
+    </view>
+    <view wx:elif="{{application.status === 'pending'}}" class="status-tip">
+      正在等待审核，请耐心等待。审核通过后重启小程序即可看到后台入口。
+    </view>
+    <view wx:elif="{{application.status === 'approved'}}" class="status-tip">
+      审核已通过！请重启小程序以激活后台入口。
+    </view>
+
+    <button class="secondary-button refresh-btn" bindtap="refresh">刷新状态</button>
+
+    <view wx:if="{{application.status === 'rejected'}}" class="reapply-section">
+      <view class="section-divider"></view>
+      <view class="apply-subtitle">重新申请</view>
+      <view class="form-item">
+        <text class="form-label">邀请码</text>
+        <input class="form-input" data-field="inviteCode" value="{{inviteCode}}" placeholder="如 REPAIR-XXXXXX" bindinput="onInput" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">姓名</text>
+        <input class="form-input" data-field="name" value="{{name}}" placeholder="请输入姓名" bindinput="onInput" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">部门</text>
+        <picker mode="selector" range="{{departments}}" value="{{departmentIndex}}" bindchange="onDeptChange">
+          <view class="form-picker">{{departments[departmentIndex]}} ›</view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="form-label">学号（选填）</text>
+        <input class="form-input" data-field="studentId" value="{{studentId}}" placeholder="可不填" bindinput="onInput" />
+      </view>
+      <button class="primary-button" bindtap="submit" disabled="{{submitting}}">提交申请</button>
+    </view>
+  </view>
+
+  <!-- 没有申请记录：显示表单 -->
+  <view wx:elif="{{!application && !loadingStatus}}" class="card">
+    <view class="form-item">
+      <text class="form-label">邀请码</text>
+      <input class="form-input" data-field="inviteCode" value="{{inviteCode}}" placeholder="如 REPAIR-XXXXXX" bindinput="onInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">姓名</text>
+      <input class="form-input" data-field="name" value="{{name}}" placeholder="请输入姓名" bindinput="onInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">部门</text>
+      <picker mode="selector" range="{{departments}}" value="{{departmentIndex}}" bindchange="onDeptChange">
+        <view class="form-picker">{{departments[departmentIndex]}} ›</view>
+      </picker>
+    </view>
+    <view class="form-item">
+      <text class="form-label">学号（选填）</text>
+      <input class="form-input" data-field="studentId" value="{{studentId}}" placeholder="可不填" bindinput="onInput" />
+    </view>
+    <button class="primary-button" bindtap="submit" disabled="{{submitting}}">提交申请</button>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:else class="card empty-state">
+    <text class="empty-title">加载中…</text>
+  </view>
+</view>

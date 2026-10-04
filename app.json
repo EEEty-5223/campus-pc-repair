@@ -4,6 +4,7 @@
 		"pages/booking/booking",
 		"pages/records/records",
 		"pages/consult/consult",
+		"pages/apply/apply",
 		"pages/detail/detail",
 		"pages/chat/chat",
 		"pages/admin/admin",

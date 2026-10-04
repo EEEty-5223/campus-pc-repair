@@ -181,5 +181,34 @@ module.exports = {
       openid: (app && app.globalData && app.globalData.openid) || '',
       content: content
     })
+  },
+  // 提交管理员申请
+  submitApply: function (inviteCode, name, department, studentId) {
+    return request('/api/admin/apply', 'POST', {
+      inviteCode: inviteCode,
+      name: name,
+      department: department,
+      studentId: studentId
+    })
+  },
+  // 查看自己的申请状态
+  getMyApplyStatus: function () {
+    return request('/api/admin/my-application', 'GET')
+  },
+  // 生成邀请码(super)
+  createInviteCode: function () {
+    return request('/api/admin/invite-code', 'POST', {})
+  },
+  // 查看已生成的邀请码列表(super)
+  getInviteCodes: function () {
+    return request('/api/admin/invite-code', 'GET')
+  },
+  // 查看所有申请(super)
+  getApplications: function () {
+    return request('/api/admin/applications', 'GET')
+  },
+  // 审核:同意或拒绝(super)  action='approve'|'reject'
+  reviewApplication: function (id, action) {
+    return request('/api/admin/applications/review', 'POST', { id: id, action: action })
   }
 }

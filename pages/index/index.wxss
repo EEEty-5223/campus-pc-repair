@@ -207,3 +207,8 @@
   font-size: 24rpx;
   text-align: center;
 }
+
+.apply-entry {
+  color: #2563eb;
+  font-weight: 600;
+}

@@ -5,6 +5,7 @@ var USE_BACKEND = true
 Page({
   data: {
     recordCount: 0,
+    isAdmin: false,
     services: [
       { icon: '💻', name: '系统问题', desc: '蓝屏、卡顿、系统安装' },
       { icon: '🧹', name: '清灰维护', desc: '除尘、硅脂与基础保养' },
@@ -23,6 +24,9 @@ Page({
     var app = getApp()
     // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
     var doLoad = function () {
+      // 登录完成后同步管理员状态
+      var isAdmin = !!(app && app.globalData && app.globalData.isAdmin)
+      self.setData({ isAdmin: isAdmin })
       self.loadRecordCount()
     }
     if (app && app.globalData && app.globalData.loginReady) {
@@ -36,6 +40,11 @@ Page({
 
   loadRecordCount: function () {
     var self = this
+    var app = getApp()
+    // 同步管理员状态(防止从后台批准后回首页时没刷新)
+    var isA = !!(app && app.globalData && app.globalData.isAdmin)
+    self.setData({ isAdmin: isA })
+
     if (USE_BACKEND) {
       var app = getApp()
       var openid = (app && app.globalData && app.globalData.openid) || ''
@@ -71,5 +80,9 @@ Page({
 
   goAdmin: function () {
     wx.navigateTo({ url: '/pages/admin/admin' })
+  },
+
+  goApply: function () {
+    wx.navigateTo({ url: '/pages/apply/apply' })
   }
 })

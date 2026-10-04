@@ -4,6 +4,7 @@ var USE_BACKEND = true
 
 Page({
   data: {
+    activeTab: 'appointments',
     allItems: [],
     items: [],
     currentFilter: 'all',
@@ -20,7 +21,10 @@ Page({
       total: 0,
       active: 0,
       completed: 0
-    }
+    },
+    inviteCodes: [],
+    applications: [],
+    pendingApplications: 0
   },
 
   onShow: function () {
@@ -99,15 +103,99 @@ Page({
     this.setData({ items: items })
   },
 
-  addDemoData: function () {
-    var created = appointments.seedDemoData()
-    if (!created) {
-      wx.showToast({ title: '已有预约，未添加演示数据', icon: 'none' })
-      return
+  switchTab: function (event) {
+    var tab = event.currentTarget.dataset.tab
+    this.setData({ activeTab: tab })
+    if (tab === 'invite') {
+      this.loadInviteCodes()
+    } else if (tab === 'apply') {
+      this.loadApplications()
     }
-    this.setData({ currentFilter: 'all' })
-    this.loadItems()
-    wx.showToast({ title: '演示数据已生成', icon: 'success' })
+  },
+
+  loadInviteCodes: function () {
+    var self = this
+    api.getInviteCodes()
+      .then(function (resp) {
+        var list = (resp && resp.list) || []
+        list.forEach(function (c) {
+          c.expired = c.used_at ? false : (c.expires_at && Date.parse(c.expires_at) < Date.now())
+          c.statusText = c.used_at ? '已使用' : (c.expired ? '已过期' : '有效')
+        })
+        self.setData({ inviteCodes: list })
+      })
+      .catch(function (err) {
+        wx.showToast({ title: '加载失败:' + (err.message || err), icon: 'none' })
+      })
+  },
+
+  createInviteCode: function () {
+    var self = this
+    api.createInviteCode()
+      .then(function (resp) {
+        var code = (resp && resp.code) || ''
+        wx.showModal({
+          title: '邀请码已生成',
+          content: '把下面这串码发给要加入的人:\n\n' + code,
+          showCancel: false,
+          confirmText: '复制并关闭',
+          success: function (r) {
+            wx.setClipboardData({ data: code })
+          }
+        })
+        self.loadInviteCodes()
+      })
+      .catch(function (err) {
+        wx.showToast({ title: '生成失败:' + (err.message || err), icon: 'none' })
+      })
+  },
+
+  copyCode: function (event) {
+    var code = event.currentTarget.dataset.code
+    wx.setClipboardData({ data: code })
+  },
+
+  loadApplications: function () {
+    var self = this
+    api.getApplications()
+      .then(function (resp) {
+        var list = (resp && resp.list) || []
+        var statusMap = { pending: '待审核', approved: '已通过', rejected: '已拒绝' }
+        list.forEach(function (a) {
+          a.statusText = statusMap[a.status] || a.status
+        })
+        self.setData({
+          applications: list,
+          pendingApplications: list.filter(function (a) { return a.status === 'pending' }).length
+        })
+      })
+      .catch(function (err) {
+        wx.showToast({ title: '加载失败:' + (err.message || err), icon: 'none' })
+      })
+  },
+
+  reviewApplication: function (event) {
+    var id = event.currentTarget.dataset.id
+    var action = event.currentTarget.dataset.action
+    var name = event.currentTarget.dataset.name
+    var that = this
+
+    var label = action === 'approve' ? '同意' : '拒绝'
+    wx.showModal({
+      title: '确认' + label + '申请',
+      content: '确定' + label + ' "' + name + '" 的申请吗?',
+      success: function (result) {
+        if (!result.confirm) return
+        api.reviewApplication(id, action)
+          .then(function () {
+            wx.showToast({ title: label + '成功', icon: 'success' })
+            that.loadApplications()
+          })
+          .catch(function (err) {
+            wx.showToast({ title: '操作失败:' + (err.message || err), icon: 'none' })
+          })
+      }
+    })
   },
 
   changeStatus: function (event) {

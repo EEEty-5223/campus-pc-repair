@@ -1,3 +1,188 @@
+/* ===== Tab 切换栏 ===== */
+.tab-bar {
+  display: flex;
+  margin-bottom: 28rpx;
+  padding: 8rpx;
+  background: #ffffff;
+  border-radius: 18rpx;
+  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.04);
+}
+
+.tab-item {
+  position: relative;
+  flex: 1;
+  padding: 20rpx 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.tab-active {
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 12rpx;
+}
+
+.tab-badge {
+  display: inline-block;
+  margin-left: 8rpx;
+  padding: 2rpx 12rpx;
+  color: #ffffff;
+  font-size: 20rpx;
+  background: #ef4444;
+  border-radius: 999rpx;
+}
+
+.reply-actions {
+  display: flex;
+  margin-top: 14rpx;
+  gap: 12rpx;
+}
+
+/* ===== 邀请码管理 ===== */
+.invite-action-card {
+  text-align: center;
+}
+
+.invite-action-title {
+  margin-bottom: 12rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.invite-action-desc {
+  margin-bottom: 24rpx;
+  color: #64748b;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.generate-button {
+  height: 80rpx;
+  margin: 0;
+  padding: 0 40rpx;
+  color: #ffffff;
+  font-size: 27rpx;
+  font-weight: 700;
+  line-height: 80rpx;
+  background: #2563eb;
+  border-radius: 14rpx;
+}
+
+.invite-card {
+  padding: 24rpx;
+}
+
+.invite-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.invite-code-text {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: 2rpx;
+}
+
+.invite-status-pill {
+  padding: 6rpx 18rpx;
+  font-size: 21rpx;
+  border-radius: 999rpx;
+}
+
+.invite-status-valid {
+  color: #ffffff;
+  background: #079455;
+}
+
+.invite-status-used {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.invite-status-expired {
+  color: #b42318;
+  background: #fef2f2;
+}
+
+.invite-meta {
+  margin-bottom: 6rpx;
+  color: #64748b;
+  font-size: 22rpx;
+}
+
+.copy-btn {
+  margin-top: 14rpx;
+}
+
+.primary-button {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+/* ===== 申请审核 ===== */
+.apply-card {
+  padding: 24rpx;
+}
+
+.apply-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.apply-name {
+  margin-bottom: 6rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.apply-dept {
+  color: #64748b;
+  font-size: 23rpx;
+}
+
+.apply-status-pill {
+  padding: 6rpx 18rpx;
+  font-size: 21rpx;
+  border-radius: 999rpx;
+}
+
+.apply-status-pending {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.apply-status-approved {
+  color: #ffffff;
+  background: #079455;
+}
+
+.apply-status-rejected {
+  color: #b42318;
+  background: #fef2f2;
+}
+
+.apply-meta {
+  margin-bottom: 6rpx;
+  color: #64748b;
+  font-size: 22rpx;
+}
+
+.apply-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18rpx;
+  gap: 12rpx;
+}
+
 .demo-warning {
   margin-bottom: 30rpx;
   padding: 24rpx;
@@ -206,7 +391,7 @@
 }
 
 .reply-button {
-  margin-top: 14rpx;
+  margin-top: 0;
 }
 
 .demo-button {

@@ -1,0 +1,114 @@
+.apply-page {
+  padding-top: 36rpx;
+}
+
+.apply-head {
+  margin-bottom: 30rpx;
+}
+
+.apply-title {
+  margin-bottom: 8rpx;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.apply-subtitle {
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.form-item {
+  margin-bottom: 28rpx;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 14rpx;
+  color: #475569;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.form-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 88rpx;
+  padding: 0 24rpx;
+  color: #1f2937;
+  font-size: 28rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 16rpx;
+}
+
+.form-picker {
+  height: 88rpx;
+  padding: 0 24rpx;
+  color: #1f2937;
+  font-size: 28rpx;
+  line-height: 88rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 16rpx;
+}
+
+.status-card .status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #edf1f7;
+}
+
+.status-card .status-row.no-border {
+  border-bottom: 0;
+}
+
+.status-label {
+  color: #64748b;
+  font-size: 26rpx;
+}
+
+.status-value {
+  color: #1f2937;
+  font-size: 26rpx;
+}
+
+.status-pending {
+  color: #9a6700;
+  background: #fff8c5;
+}
+
+.status-approved {
+  color: #067647;
+  background: #dcfae6;
+}
+
+.status-rejected {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.status-tip {
+  margin: 20rpx 0;
+  padding: 20rpx 22rpx;
+  color: #475569;
+  font-size: 24rpx;
+  line-height: 1.6;
+  background: #f8fafc;
+  border-radius: 14rpx;
+}
+
+.refresh-btn {
+  margin-top: 10rpx;
+}
+
+.reapply-section {
+  margin-top: 10rpx;
+}
+
+.section-divider {
+  height: 1rpx;
+  margin: 24rpx 0;
+  background: #edf1f7;
+}

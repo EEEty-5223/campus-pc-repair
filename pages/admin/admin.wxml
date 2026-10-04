@@ -1,86 +1,152 @@
 <view class="page admin-page">
-  <view class="demo-warning">
-    <view class="warning-title">⚠️ 演示后台入口</view>
-    <view>目前没有登录和权限校验，只能用于本机演示。正式发布前必须改为云端管理员鉴权。</view>
-  </view>
-
   <view class="admin-head">
-    <view class="admin-title">预约处理</view>
-    <view class="admin-count">{{items.length}} 条记录</view>
+    <view class="admin-title">社团后台</view>
   </view>
 
-  <view class="stats-grid">
-    <view class="stat-card">
-      <view class="stat-value">{{stats.total}}</view>
-      <view class="stat-label">全部预约</view>
-    </view>
-    <view class="stat-card active-stat">
-      <view class="stat-value">{{stats.active}}</view>
-      <view class="stat-label">处理中</view>
-    </view>
-    <view class="stat-card completed-stat">
-      <view class="stat-value">{{stats.completed}}</view>
-      <view class="stat-label">已完成</view>
+  <!-- Tab 切换栏 -->
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'appointments' ? 'tab-active' : ''}}" data-tab="appointments" bindtap="switchTab">预约处理</view>
+    <view class="tab-item {{activeTab === 'invite' ? 'tab-active' : ''}}" data-tab="invite" bindtap="switchTab">邀请码</view>
+    <view class="tab-item {{activeTab === 'apply' ? 'tab-active' : ''}}" data-tab="apply" bindtap="switchTab">
+      申请审核
+      <text wx:if="{{pendingApplications > 0}}" class="tab-badge">{{pendingApplications}}</text>
     </view>
   </view>
 
-  <scroll-view class="filter-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
-    <view class="filter-row">
-      <view
-        class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}"
-        wx:for="{{filters}}"
-        wx:key="value"
-        data-status="{{item.value}}"
-        bindtap="selectFilter"
-      >{{item.label}} {{item.count}}</view>
+  <!-- ========== Tab 1: 预约处理 ========== -->
+  <block wx:if="{{activeTab === 'appointments'}}">
+    <view class="stats-grid">
+      <view class="stat-card">
+        <view class="stat-value">{{stats.total}}</view>
+        <view class="stat-label">全部预约</view>
+      </view>
+      <view class="stat-card active-stat">
+        <view class="stat-value">{{stats.active}}</view>
+        <view class="stat-label">处理中</view>
+      </view>
+      <view class="stat-card completed-stat">
+        <view class="stat-value">{{stats.completed}}</view>
+        <view class="stat-label">已完成</view>
+      </view>
     </view>
-  </scroll-view>
 
-  <view wx:if="{{items.length}}">
-    <view class="card admin-card" wx:for="{{items}}" wx:key="id">
-      <view class="admin-top">
-        <view>
-          <view class="customer-name">{{item.name}} · {{item.deviceType}}</view>
-          <view class="customer-phone">{{item.phone}}</view>
+    <scroll-view class="filter-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
+      <view class="filter-row">
+        <view
+          class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}"
+          wx:for="{{filters}}"
+          wx:key="value"
+          data-status="{{item.value}}"
+          bindtap="selectFilter"
+        >{{item.label}} {{item.count}}</view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{items.length}}">
+      <view class="card admin-card" wx:for="{{items}}" wx:key="id">
+        <view class="admin-top">
+          <view>
+            <view class="customer-name">{{item.name}} · {{item.deviceType}}</view>
+            <view class="customer-phone">{{item.phone}}</view>
+          </view>
+          <view class="status-pill {{item.statusClass}}">{{item.statusText}}</view>
         </view>
-        <view class="status-pill {{item.statusClass}}">{{item.statusText}}</view>
-      </view>
 
-      <view class="fault-summary">{{item.faultType}}：{{item.description}}</view>
-      <view class="schedule">{{item.appointmentDate}} {{item.timeSlot}} · {{item.location}}</view>
+        <view class="fault-summary">{{item.faultType}}：{{item.description}}</view>
+        <view class="schedule">{{item.appointmentDate}} {{item.timeSlot}} · {{item.location}}</view>
 
-      <view class="reply-box" wx:if="{{item.canReply}}">
-        <view class="reply-title">沟通记录（共 {{item.messages.length}} 条）</view>
-        <view class="reply-existing" wx:if="{{item.latestMessage}}">
-          <text class="reply-existing-label">{{item.latestMessage.fromText}}（{{item.latestMessage.atText}}）：</text>
-          <text class="reply-existing-content">{{item.latestMessage.content}}</text>
+        <view class="reply-box" wx:if="{{item.canReply}}">
+          <view class="reply-title">沟通记录（共 {{item.messages.length}} 条）</view>
+          <view class="reply-existing" wx:if="{{item.latestMessage}}">
+            <text class="reply-existing-label">{{item.latestMessage.fromText}}（{{item.latestMessage.atText}}）：</text>
+            <text class="reply-existing-content">{{item.latestMessage.content}}</text>
+          </view>
+          <textarea
+            class="reply-input"
+            placeholder="快速回复，发送后进入沟通记录"
+            maxlength="30"
+            value="{{draftReplies[item.id]}}"
+            data-id="{{item.id}}"
+            bindinput="onReplyInput"
+          />
+          <view class="reply-actions">
+            <button class="mini-button reply-button" data-id="{{item.id}}" bindtap="submitReply">发送</button>
+            <button class="mini-button detail-button reply-button" data-id="{{item.id}}" bindtap="goChat">完整对话</button>
+          </view>
         </view>
-        <textarea
-          class="reply-input"
-          placeholder="快速回复，发送后进入沟通记录"
-          maxlength="30"
-          value="{{draftReplies[item.id]}}"
-          data-id="{{item.id}}"
-          bindinput="onReplyInput"
-        />
-        <button class="mini-button reply-button" data-id="{{item.id}}" bindtap="submitReply">发送</button>
-        <button class="mini-button detail-button reply-button" data-id="{{item.id}}" bindtap="goChat">进入完整对话</button>
-      </view>
 
-      <view class="admin-actions">
-        <button class="mini-button detail-button" data-id="{{item.id}}" bindtap="goDetail">详情</button>
-        <button class="mini-button confirm-button" wx:if="{{item.status === 'pending'}}" data-id="{{item.id}}" data-status="accepted" bindtap="changeStatus">确认预约</button>
-        <button class="mini-button" wx:if="{{item.status === 'accepted'}}" data-id="{{item.id}}" data-status="repairing" bindtap="changeStatus">开始维修</button>
-        <button class="mini-button complete-button" wx:if="{{item.status === 'repairing'}}" data-id="{{item.id}}" data-status="completed" bindtap="changeStatus">完成</button>
-        <button class="mini-button cancel-button" wx:if="{{item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" data-status="cancelled" bindtap="changeStatus">取消</button>
+        <view class="admin-actions">
+          <button class="mini-button detail-button" data-id="{{item.id}}" bindtap="goDetail">详情</button>
+          <button class="mini-button confirm-button" wx:if="{{item.status === 'pending'}}" data-id="{{item.id}}" data-status="accepted" bindtap="changeStatus">确认预约</button>
+          <button class="mini-button" wx:if="{{item.status === 'accepted'}}" data-id="{{item.id}}" data-status="repairing" bindtap="changeStatus">开始维修</button>
+          <button class="mini-button complete-button" wx:if="{{item.status === 'repairing'}}" data-id="{{item.id}}" data-status="completed" bindtap="changeStatus">完成</button>
+          <button class="mini-button cancel-button" wx:if="{{item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" data-status="cancelled" bindtap="changeStatus">取消</button>
+        </view>
       </view>
     </view>
-  </view>
 
-  <view class="card empty-state" wx:else>
-    <text class="empty-icon">📭</text>
-    <text class="empty-title">当前筛选下暂无预约</text>
-    <text class="muted">可以切换上方状态，或先从用户端提交预约</text>
-    <button class="secondary-button demo-button" wx:if="{{allItems.length === 0}}" bindtap="addDemoData">生成 3 条演示预约</button>
-  </view>
+    <view class="card empty-state" wx:else>
+      <text class="empty-icon">📭</text>
+      <text class="empty-title">当前筛选下暂无预约</text>
+      <text class="muted">可以切换上方状态，或先从用户端提交预约</text>
+    </view>
+  </block>
+
+  <!-- ========== Tab 2: 邀请码管理 ========== -->
+  <block wx:if="{{activeTab === 'invite'}}">
+    <view class="card invite-action-card">
+      <view class="invite-action-title">邀请码用于让其他人申请加入社团</view>
+      <view class="invite-action-desc">生成后 7 天内有效，请通过微信私下发给被邀请的人。</view>
+      <button class="primary-button generate-button" bindtap="createInviteCode">+ 生成新邀请码</button>
+    </view>
+
+    <view wx:if="{{inviteCodes.length}}">
+      <view class="card invite-card" wx:for="{{inviteCodes}}" wx:key="code">
+        <view class="invite-code-row">
+          <text class="invite-code-text">{{item.code}}</text>
+          <text class="invite-status-pill invite-status-{{item.statusText === '有效' ? 'valid' : (item.statusText === '已使用' ? 'used' : 'expired')}}">{{item.statusText}}</text>
+        </view>
+        <view class="invite-meta">创建：{{item.created_at}}</view>
+        <view class="invite-meta" wx:if="{{item.expires_at}}">过期：{{item.expires_at}}</view>
+        <view class="invite-meta" wx:if="{{item.used_at}}">使用时间：{{item.used_at}}</view>
+        <view class="invite-meta" wx:if="{{item.used_by}}">使用者：{{item.used_by}}</view>
+        <button class="mini-button detail-button copy-btn" data-code="{{item.code}}" bindtap="copyCode">复制码</button>
+      </view>
+    </view>
+
+    <view class="card empty-state" wx:else>
+      <text class="empty-icon">🎫</text>
+      <text class="empty-title">还没有邀请码</text>
+      <text class="muted">点上方按钮生成第一个</text>
+    </view>
+  </block>
+
+  <!-- ========== Tab 3: 申请审核 ========== -->
+  <block wx:if="{{activeTab === 'apply'}}">
+    <view wx:if="{{applications.length}}">
+      <view class="card apply-card" wx:for="{{applications}}" wx:key="id">
+        <view class="apply-top">
+          <view>
+            <view class="apply-name">{{item.name}}</view>
+            <view class="apply-dept">{{item.department}}</view>
+          </view>
+          <text class="apply-status-pill apply-status-{{item.status}}">{{item.statusText}}</text>
+        </view>
+        <view class="apply-meta" wx:if="{{item.student_id}}">学号：{{item.student_id}}</view>
+        <view class="apply-meta">提交时间：{{item.created_at}}</view>
+        <view class="apply-meta" wx:if="{{item.reviewed_at}}">审核时间：{{item.reviewed_at}}</view>
+
+        <view class="apply-actions" wx:if="{{item.status === 'pending'}}">
+          <button class="mini-button confirm-button" data-id="{{item.id}}" data-action="approve" data-name="{{item.name}}" bindtap="reviewApplication">同意</button>
+          <button class="mini-button cancel-button" data-id="{{item.id}}" data-action="reject" data-name="{{item.name}}" bindtap="reviewApplication">拒绝</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="card empty-state" wx:else>
+      <text class="empty-icon">📭</text>
+      <text class="empty-title">暂无申请记录</text>
+      <text class="muted">等其他人提交申请后会出现在这里</text>
+    </view>
+  </block>
 </view>

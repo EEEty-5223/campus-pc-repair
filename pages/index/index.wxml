@@ -44,5 +44,6 @@
     <view class="notice-line">· 检测后如需购买配件，会先征得本人同意</view>
   </view>
 
-  <view class="admin-entry" bindtap="goAdmin">社团成员演示后台 ›</view>
+  <view class="admin-entry" bindtap="goAdmin" wx:if="{{isAdmin}}">社团成员演示后台 ›</view>
+  <view class="admin-entry apply-entry" bindtap="goApply" wx:if="{{!isAdmin}}">申请加入社团 ›</view>
 </view>
