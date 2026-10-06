@@ -208,7 +208,14 @@ module.exports = {
     return request('/api/admin/applications', 'GET')
   },
   // 审核:同意或拒绝(super)  action='approve'|'reject'
-  reviewApplication: function (id, action) {
-    return request('/api/admin/applications/review', 'POST', { id: id, action: action })
+  reviewApplication: function (id, action, reason) {
+    return request('/api/admin/applications/review', 'POST', { id: id, action: action, reason: reason || '' })
+  },
+  // 成员管理
+  getMembers: function () {
+    return request('/api/admin/whitelist', 'GET')
+  },
+  updateMember: function (data) {
+    return request('/api/admin/whitelist', 'POST', data)
   }
 }

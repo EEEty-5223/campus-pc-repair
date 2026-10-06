@@ -5,6 +5,7 @@ var USE_BACKEND = true
 Page({
   data: {
     activeTab: 'appointments',
+    role: '',
     allItems: [],
     items: [],
     currentFilter: 'all',
@@ -24,12 +25,20 @@ Page({
     },
     inviteCodes: [],
     applications: [],
-    pendingApplications: 0
+    pendingApplications: 0,
+    members: [],
+    memberRoles: ['admin', 'leader', 'member'],
+    memberRoleLabels: { admin: '管理员', leader: '负责人', member: '成员' },
+    memberDepartments: ['技术部', '运营部', '宣传部'],
+    editingMember: null
   },
 
   onShow: function () {
     var self = this
     var app = getApp()
+    // 同步当前用户角色
+    var role = (app && app.globalData && app.globalData.role) || ''
+    self.setData({ role: role })
     // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
     if (app && app.globalData && app.globalData.loginReady) {
       app.globalData.loginReady
@@ -110,6 +119,8 @@ Page({
       this.loadInviteCodes()
     } else if (tab === 'apply') {
       this.loadApplications()
+    } else if (tab === 'members') {
+      this.loadMembers()
     }
   },
 
@@ -174,6 +185,79 @@ Page({
       })
   },
 
+  loadMembers: function () {
+    var self = this
+    api.getMembers()
+      .then(function (resp) {
+        var list = (resp && resp.list) || []
+        var roleLabels = self.data.memberRoleLabels
+        var roles = self.data.memberRoles
+        var depts = self.data.memberDepartments
+        list.forEach(function (m) {
+          m.roleText = roleLabels[m.role] || m.role
+          m.roleIndex = roles.indexOf(m.role)
+          m.departmentIndex = depts.indexOf(m.department)
+          m.editing = false
+        })
+        self.setData({ members: list })
+      })
+      .catch(function (err) {
+        wx.showToast({ title: '成员加载失败:' + (err.message || err), icon: 'none' })
+      })
+  },
+
+  toggleEditMember: function (event) {
+    var index = event.currentTarget.dataset.index
+    var members = this.data.members.map(function (m, i) {
+      m.editing = (i === index) ? !m.editing : false
+      return m
+    })
+    this.setData({ members: members })
+  },
+
+  onMemberFieldChange: function (event) {
+    var index = event.currentTarget.dataset.index
+    var field = event.currentTarget.dataset.field
+    var value = event.detail.value
+    var members = this.data.members.slice()
+    var member = members[index]
+    if (field === 'role') {
+      member.role = this.data.memberRoles[value]
+      member.roleIndex = value
+    } else if (field === 'department') {
+      member.department = this.data.memberDepartments[value]
+      member.departmentIndex = value
+    } else {
+      member[field] = value
+    }
+    member.roleText = this.data.memberRoleLabels[member.role] || member.role
+    this.setData({ members: members })
+  },
+
+  saveMember: function (event) {
+    var index = event.currentTarget.dataset.index
+    var member = this.data.members[index]
+    var that = this
+    api.updateMember({
+      openid: member.openid,
+      name: member.name || '',
+      nickname: member.nickname || '',
+      contact: member.contact || '',
+      department: member.department || '',
+      role: member.role || 'member'
+    })
+      .then(function () {
+        wx.showToast({ title: '已保存', icon: 'success' })
+        var members = that.data.members.slice()
+        members[index].editing = false
+        that.setData({ members: members })
+        that.loadMembers()
+      })
+      .catch(function (err) {
+        wx.showToast({ title: '保存失败:' + (err.message || err), icon: 'none' })
+      })
+  },
+
   reviewApplication: function (event) {
     var id = event.currentTarget.dataset.id
     var action = event.currentTarget.dataset.action
@@ -181,21 +265,45 @@ Page({
     var that = this
 
     var label = action === 'approve' ? '同意' : '拒绝'
-    wx.showModal({
-      title: '确认' + label + '申请',
-      content: '确定' + label + ' "' + name + '" 的申请吗?',
-      success: function (result) {
-        if (!result.confirm) return
-        api.reviewApplication(id, action)
-          .then(function () {
-            wx.showToast({ title: label + '成功', icon: 'success' })
-            that.loadApplications()
-          })
-          .catch(function (err) {
-            wx.showToast({ title: '操作失败:' + (err.message || err), icon: 'none' })
-          })
-      }
-    })
+    if (action === 'reject') {
+      wx.showModal({
+        title: '驳回申请',
+        content: '请填写驳回原因，申请人将看到此原因',
+        editable: true,
+        placeholderText: '例如：邀请码无效、信息填写不完整',
+        success: function (result) {
+          if (!result.confirm) return
+          var reason = String(result.content || '').trim()
+          if (!reason) {
+            wx.showToast({ title: '驳回原因不能为空', icon: 'none' })
+            return
+          }
+          that.doReviewApplication(id, action, name, reason)
+        }
+      })
+    } else {
+      wx.showModal({
+        title: '确认' + label + '申请',
+        content: '确定' + label + ' "' + name + '" 的申请吗?',
+        success: function (result) {
+          if (!result.confirm) return
+          that.doReviewApplication(id, action, name, '')
+        }
+      })
+    }
+  },
+
+  doReviewApplication: function (id, action, name, reason) {
+    var that = this
+    var label = action === 'approve' ? '同意' : '拒绝'
+    api.reviewApplication(id, action, reason)
+      .then(function () {
+        wx.showToast({ title: label + '成功', icon: 'success' })
+        that.loadApplications()
+      })
+      .catch(function (err) {
+        wx.showToast({ title: '操作失败:' + (err.message || err), icon: 'none' })
+      })
   },
 
   changeStatus: function (event) {

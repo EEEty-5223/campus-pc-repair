@@ -397,3 +397,102 @@
 .demo-button {
   margin-top: 34rpx;
 }
+
+/* ===== 成员管理 ===== */
+.member-card {
+  padding: 24rpx;
+}
+
+.member-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.member-name {
+  margin-bottom: 6rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.member-openid {
+  color: #94a3b8;
+  font-size: 20rpx;
+  word-break: break-all;
+}
+
+.member-role-pill {
+  padding: 6rpx 18rpx;
+  font-size: 21rpx;
+  border-radius: 999rpx;
+}
+
+.role-admin {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+.role-leader {
+  color: #7c3aed;
+  background: #ede9fe;
+}
+
+.role-member {
+  color: #0f766e;
+  background: #ccfbf1;
+}
+
+.member-meta {
+  margin-bottom: 6rpx;
+  color: #64748b;
+  font-size: 23rpx;
+}
+
+.member-edit {
+  margin-top: 18rpx;
+  padding: 18rpx;
+  background: #f8fafc;
+  border-radius: 14rpx;
+}
+
+.edit-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14rpx;
+  gap: 16rpx;
+}
+
+.edit-label {
+  width: 160rpx;
+  flex-shrink: 0;
+  color: #475569;
+  font-size: 24rpx;
+}
+
+.edit-input {
+  flex: 1;
+  padding: 14rpx 16rpx;
+  font-size: 24rpx;
+  background: #ffffff;
+  border: 1rpx solid #dbe3ef;
+  border-radius: 10rpx;
+}
+
+.edit-picker {
+  flex: 1;
+  padding: 14rpx 16rpx;
+  font-size: 24rpx;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1rpx solid #dbe3ef;
+  border-radius: 10rpx;
+}
+
+.member-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+  gap: 12rpx;
+}

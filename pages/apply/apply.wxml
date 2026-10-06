@@ -35,7 +35,7 @@
     </view>
 
     <view wx:if="{{application.status === 'rejected'}}" class="status-tip">
-      申请被拒绝。请确认邀请码正确后，重新填写下方表单提交。
+      申请被拒绝。原因：{{application.reason || '未填写'}}
     </view>
     <view wx:elif="{{application.status === 'pending'}}" class="status-tip">
       正在等待审核，请耐心等待。审核通过后重启小程序即可看到后台入口。

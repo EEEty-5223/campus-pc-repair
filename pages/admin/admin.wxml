@@ -5,13 +5,21 @@
 
   <!-- Tab 切换栏 -->
   <view class="tab-bar">
-    <view class="tab-item {{activeTab === 'appointments' ? 'tab-active' : ''}}" data-tab="appointments" bindtap="switchTab">预约处理</view>
-    <view class="tab-item {{activeTab === 'invite' ? 'tab-active' : ''}}" data-tab="invite" bindtap="switchTab">邀请码</view>
-    <view class="tab-item {{activeTab === 'apply' ? 'tab-active' : ''}}" data-tab="apply" bindtap="switchTab">
+    <view class="tab-item ..." data-tab="appointments" bindtap="switchTab">预约处理</view>
+
+    <!-- admin 和 leader 都能生成邀请码 -->
+    <view wx:if="{{role === 'admin' || role === 'leader'}}" class="tab-item ..." data-tab="invite" bindtap="switchTab">邀请码</view>
+
+    <!-- 只有 admin 能处理申请 -->
+    <view wx:if="{{role === 'admin'}}" class="tab-item ..." data-tab="apply" bindtap="switchTab">
       申请审核
       <text wx:if="{{pendingApplications > 0}}" class="tab-badge">{{pendingApplications}}</text>
     </view>
+
+    <!-- 成员管理保持只有 admin -->
+    <view wx:if="{{role === 'admin'}}" class="tab-item ..." data-tab="members" bindtap="switchTab">成员管理</view>
   </view>
+
 
   <!-- ========== Tab 1: 预约处理 ========== -->
   <block wx:if="{{activeTab === 'appointments'}}">
@@ -32,13 +40,7 @@
 
     <scroll-view class="filter-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
       <view class="filter-row">
-        <view
-          class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}"
-          wx:for="{{filters}}"
-          wx:key="value"
-          data-status="{{item.value}}"
-          bindtap="selectFilter"
-        >{{item.label}} {{item.count}}</view>
+        <view class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}" wx:for="{{filters}}" wx:key="value" data-status="{{item.value}}" bindtap="selectFilter">{{item.label}} {{item.count}}</view>
       </view>
     </scroll-view>
 
@@ -61,14 +63,7 @@
             <text class="reply-existing-label">{{item.latestMessage.fromText}}（{{item.latestMessage.atText}}）：</text>
             <text class="reply-existing-content">{{item.latestMessage.content}}</text>
           </view>
-          <textarea
-            class="reply-input"
-            placeholder="快速回复，发送后进入沟通记录"
-            maxlength="30"
-            value="{{draftReplies[item.id]}}"
-            data-id="{{item.id}}"
-            bindinput="onReplyInput"
-          />
+          <textarea class="reply-input" placeholder="快速回复，发送后进入沟通记录" maxlength="30" value="{{draftReplies[item.id]}}" data-id="{{item.id}}" bindinput="onReplyInput" />
           <view class="reply-actions">
             <button class="mini-button reply-button" data-id="{{item.id}}" bindtap="submitReply">发送</button>
             <button class="mini-button detail-button reply-button" data-id="{{item.id}}" bindtap="goChat">完整对话</button>
@@ -96,7 +91,7 @@
   <block wx:if="{{activeTab === 'invite'}}">
     <view class="card invite-action-card">
       <view class="invite-action-title">邀请码用于让其他人申请加入社团</view>
-      <view class="invite-action-desc">生成后 7 天内有效，请通过微信私下发给被邀请的人。</view>
+      <view class="invite-action-desc">生成后 5 分钟内有效，且只能使用一次，请尽快通过微信私下发给被邀请的人。</view>
       <button class="primary-button generate-button" bindtap="createInviteCode">+ 生成新邀请码</button>
     </view>
 
@@ -147,6 +142,67 @@
       <text class="empty-icon">📭</text>
       <text class="empty-title">暂无申请记录</text>
       <text class="muted">等其他人提交申请后会出现在这里</text>
+    </view>
+  </block>
+
+  <!-- ========== Tab 4: 成员管理 ========== -->
+  <block wx:if="{{activeTab === 'members'}}">
+    <view wx:if="{{members.length}}">
+      <view class="card member-card" wx:for="{{members}}" wx:key="openid">
+        <view class="member-top">
+          <view>
+            <view class="member-name">{{item.name || item.nickname || '未命名'}}</view>
+            <view class="member-openid">{{item.openid}}</view>
+          </view>
+          <text class="member-role-pill role-{{item.role}}">{{item.roleText}}</text>
+        </view>
+
+        <view class="member-meta" wx:if="{{item.contact}}">联系方式：{{item.contact}}</view>
+        <view class="member-meta" wx:if="{{item.department}}">部门：{{item.department}}</view>
+        <view class="member-meta" wx:if="{{!item.contact && !item.department}}">暂无部门和联系方式</view>
+
+        <!-- 编辑模式 -->
+        <view class="member-edit" wx:if="{{item.editing}}">
+          <view class="edit-row">
+            <text class="edit-label">昵称/姓名</text>
+            <input class="edit-input" data-index="{{index}}" data-field="nickname" value="{{item.nickname}}" bindinput="onMemberFieldChange" />
+          </view>
+          <view class="edit-row">
+            <text class="edit-label">姓名（实名）</text>
+            <input class="edit-input" data-index="{{index}}" data-field="name" value="{{item.name}}" bindinput="onMemberFieldChange" />
+          </view>
+          <view class="edit-row">
+            <text class="edit-label">联系方式</text>
+            <input class="edit-input" data-index="{{index}}" data-field="contact" value="{{item.contact}}" placeholder="手机号/微信号" bindinput="onMemberFieldChange" />
+          </view>
+          <view class="edit-row">
+            <text class="edit-label">角色</text>
+            <picker mode="selector" range="{{memberRoles}}" value="{{item.roleIndex}}" data-index="{{index}}" data-field="role" bindchange="onMemberFieldChange">
+              <view class="edit-picker">{{item.roleText}}</view>
+            </picker>
+          </view>
+          <view class="edit-row">
+            <text class="edit-label">部门</text>
+            <picker mode="selector" range="{{memberDepartments}}" value="{{item.departmentIndex}}" data-index="{{index}}" data-field="department" bindchange="onMemberFieldChange">
+              <view class="edit-picker">{{item.department || '请选择'}}</view>
+            </picker>
+          </view>
+          <view class="member-actions">
+            <button class="mini-button complete-button" data-index="{{index}}" bindtap="saveMember">保存</button>
+            <button class="mini-button detail-button" data-index="{{index}}" bindtap="toggleEditMember">取消</button>
+          </view>
+        </view>
+
+        <view class="member-actions" wx:else>
+          <button class="mini-button detail-button" data-index="{{index}}" bindtap="toggleEditMember">编辑</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="card empty-state" wx:else>
+      <text class="empty-icon">👥</text>
+      <text class="empty-title">暂无成员</text>
+      <text class="muted">通过邀请码让他人申请加入</text>
     </view>
   </block>
 </view>
