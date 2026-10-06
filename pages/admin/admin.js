@@ -10,13 +10,36 @@ Page({
     items: [],
     currentFilter: 'all',
     draftReplies: {},
-    filters: [
-      { value: 'all', label: '全部', count: 0 },
-      { value: 'pending', label: '预约中', count: 0 },
-      { value: 'accepted', label: '预约成功', count: 0 },
-      { value: 'repairing', label: '维修中', count: 0 },
-      { value: 'completed', label: '已完成', count: 0 },
-      { value: 'cancelled', label: '已取消', count: 0 }
+    filters: [{
+        value: 'all',
+        label: '全部',
+        count: 0
+      },
+      {
+        value: 'pending',
+        label: '预约中',
+        count: 0
+      },
+      {
+        value: 'accepted',
+        label: '预约成功',
+        count: 0
+      },
+      {
+        value: 'repairing',
+        label: '维修中',
+        count: 0
+      },
+      {
+        value: 'completed',
+        label: '已完成',
+        count: 0
+      },
+      {
+        value: 'cancelled',
+        label: '已取消',
+        count: 0
+      }
     ],
     stats: {
       total: 0,
@@ -28,22 +51,41 @@ Page({
     pendingApplications: 0,
     members: [],
     memberRoles: ['admin', 'leader', 'member'],
-    memberRoleLabels: { admin: '管理员', leader: '负责人', member: '成员' },
+    memberRoleLabels: {
+      admin: '管理员',
+      leader: '负责人',
+      member: '成员'
+    },
     memberDepartments: ['技术部', '运营部', '宣传部'],
-    editingMember: null
+    editingMember: null,
+    assignDialogVisible: false,
+    assignAppointmentId: '',
+    assignDepartmentIndex: 0,
+    assignMemberIndex: 0,
+    assignableMembers: [],
+    myDepartment: ''
+
   },
 
   onShow: function () {
     var self = this
     var app = getApp()
-    // 同步当前用户角色
+    // 同步当前用户角色和部门
     var role = (app && app.globalData && app.globalData.role) || ''
-    self.setData({ role: role })
+    var department = (app && app.globalData && app.globalData.department) || ''
+    self.setData({
+      role: role,
+      myDepartment: department
+    })
     // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
     if (app && app.globalData && app.globalData.loginReady) {
       app.globalData.loginReady
-        .then(function () { self.loadItems() })
-        .catch(function () { self.loadItems() })
+        .then(function () {
+          self.loadItems()
+        })
+        .catch(function () {
+          self.loadItems()
+        })
     } else {
       self.loadItems()
     }
@@ -56,10 +98,14 @@ Page({
         return appointments.decorate ? appointments.decorate(item) : item
       })
       var filters = self.data.filters.map(function (filter) {
-        var count = filter.value === 'all'
-          ? allItems.length
-          : allItems.filter(function (item) { return item.status === filter.value }).length
-        return Object.assign({}, filter, { count: count })
+        var count = filter.value === 'all' ?
+          allItems.length :
+          allItems.filter(function (item) {
+            return item.status === filter.value
+          }).length
+        return Object.assign({}, filter, {
+          count: count
+        })
       })
       self.setData({
         allItems: allItems,
@@ -85,11 +131,16 @@ Page({
             return api.getMessages(item.id).then(function (mr) {
               item.messages = (mr && mr.list) || []
               return item
-            }).catch(function () { item.messages = []; return item })
+            }).catch(function () {
+              item.messages = [];
+              return item
+            })
           })
           return Promise.all(msgPromises)
         })
-        .then(function (list) { render(list) })
+        .then(function (list) {
+          render(list)
+        })
         .catch(function (err) {
           console.error('[admin] 拉取失败:', err.message)
           render(appointments.list())
@@ -100,21 +151,29 @@ Page({
   },
 
   selectFilter: function (event) {
-    this.setData({ currentFilter: event.currentTarget.dataset.status })
+    this.setData({
+      currentFilter: event.currentTarget.dataset.status
+    })
     this.applyFilter()
   },
 
   applyFilter: function () {
     var status = this.data.currentFilter
-    var items = status === 'all'
-      ? this.data.allItems
-      : this.data.allItems.filter(function (item) { return item.status === status })
-    this.setData({ items: items })
+    var items = status === 'all' ?
+      this.data.allItems :
+      this.data.allItems.filter(function (item) {
+        return item.status === status
+      })
+    this.setData({
+      items: items
+    })
   },
 
   switchTab: function (event) {
     var tab = event.currentTarget.dataset.tab
-    this.setData({ activeTab: tab })
+    this.setData({
+      activeTab: tab
+    })
     if (tab === 'invite') {
       this.loadInviteCodes()
     } else if (tab === 'apply') {
@@ -133,10 +192,15 @@ Page({
           c.expired = c.used_at ? false : (c.expires_at && Date.parse(c.expires_at) < Date.now())
           c.statusText = c.used_at ? '已使用' : (c.expired ? '已过期' : '有效')
         })
-        self.setData({ inviteCodes: list })
+        self.setData({
+          inviteCodes: list
+        })
       })
       .catch(function (err) {
-        wx.showToast({ title: '加载失败:' + (err.message || err), icon: 'none' })
+        wx.showToast({
+          title: '加载失败:' + (err.message || err),
+          icon: 'none'
+        })
       })
   },
 
@@ -151,19 +215,26 @@ Page({
           showCancel: false,
           confirmText: '复制并关闭',
           success: function (r) {
-            wx.setClipboardData({ data: code })
+            wx.setClipboardData({
+              data: code
+            })
           }
         })
         self.loadInviteCodes()
       })
       .catch(function (err) {
-        wx.showToast({ title: '生成失败:' + (err.message || err), icon: 'none' })
+        wx.showToast({
+          title: '生成失败:' + (err.message || err),
+          icon: 'none'
+        })
       })
   },
 
   copyCode: function (event) {
     var code = event.currentTarget.dataset.code
-    wx.setClipboardData({ data: code })
+    wx.setClipboardData({
+      data: code
+    })
   },
 
   loadApplications: function () {
@@ -171,22 +242,32 @@ Page({
     api.getApplications()
       .then(function (resp) {
         var list = (resp && resp.list) || []
-        var statusMap = { pending: '待审核', approved: '已通过', rejected: '已拒绝' }
+        var statusMap = {
+          pending: '待审核',
+          approved: '已通过',
+          rejected: '已拒绝'
+        }
         list.forEach(function (a) {
           a.statusText = statusMap[a.status] || a.status
         })
         self.setData({
           applications: list,
-          pendingApplications: list.filter(function (a) { return a.status === 'pending' }).length
+          pendingApplications: list.filter(function (a) {
+            return a.status === 'pending'
+          }).length
         })
       })
       .catch(function (err) {
-        wx.showToast({ title: '加载失败:' + (err.message || err), icon: 'none' })
+        wx.showToast({
+          title: '加载失败:' + (err.message || err),
+          icon: 'none'
+        })
       })
   },
 
   loadMembers: function () {
     var self = this
+    var myOpenid = (getApp() && getApp().globalData && getApp().globalData.openid) || ''
     api.getMembers()
       .then(function (resp) {
         var list = (resp && resp.list) || []
@@ -198,11 +279,17 @@ Page({
           m.roleIndex = roles.indexOf(m.role)
           m.departmentIndex = depts.indexOf(m.department)
           m.editing = false
+          m.isSelf = (m.openid === myOpenid)
         })
-        self.setData({ members: list })
+        self.setData({
+          members: list
+        })
       })
       .catch(function (err) {
-        wx.showToast({ title: '成员加载失败:' + (err.message || err), icon: 'none' })
+        wx.showToast({
+          title: '成员加载失败:' + (err.message || err),
+          icon: 'none'
+        })
       })
   },
 
@@ -212,7 +299,9 @@ Page({
       m.editing = (i === index) ? !m.editing : false
       return m
     })
-    this.setData({ members: members })
+    this.setData({
+      members: members
+    })
   },
 
   onMemberFieldChange: function (event) {
@@ -231,7 +320,9 @@ Page({
       member[field] = value
     }
     member.roleText = this.data.memberRoleLabels[member.role] || member.role
-    this.setData({ members: members })
+    this.setData({
+      members: members
+    })
   },
 
   saveMember: function (event) {
@@ -239,23 +330,109 @@ Page({
     var member = this.data.members[index]
     var that = this
     api.updateMember({
-      openid: member.openid,
-      name: member.name || '',
-      nickname: member.nickname || '',
-      contact: member.contact || '',
-      department: member.department || '',
-      role: member.role || 'member'
-    })
+        openid: member.openid,
+        name: member.name || '',
+        nickname: member.nickname || '',
+        contact: member.contact || '',
+        department: member.department || '',
+        role: member.role || 'member'
+      })
       .then(function () {
-        wx.showToast({ title: '已保存', icon: 'success' })
+        wx.showToast({
+          title: '已保存',
+          icon: 'success'
+        })
         var members = that.data.members.slice()
         members[index].editing = false
-        that.setData({ members: members })
+        that.setData({
+          members: members
+        })
         that.loadMembers()
       })
       .catch(function (err) {
-        wx.showToast({ title: '保存失败:' + (err.message || err), icon: 'none' })
+        wx.showToast({
+          title: '保存失败:' + (err.message || err),
+          icon: 'none'
+        })
       })
+  },
+
+  showAssign: function (event) {
+    var id = event.currentTarget.dataset.id
+    var self = this
+    this.setData({
+      assignDialogVisible: true,
+      assignAppointmentId: id,
+      assignMemberIndex: 0,
+      assignableMembers: []
+    })
+    this.loadAssignableMembers()
+  },
+
+  loadAssignableMembers: function () {
+    var self = this
+    var role = self.data.role
+    var myDepartment = self.data.myDepartment
+    var roleLabels = self.data.memberRoleLabels
+    api.getMembers()
+      .then(function (resp) {
+        var list = (resp && resp.list) || []
+        // leader 只能选本部门 member；admin 可以选所有人（admin/leader/member）
+        if (role === 'leader') {
+          list = list.filter(function (m) {
+            return m.role === 'member' && m.department === myDepartment
+          })
+        }
+        list.forEach(function (m) {
+          var label = roleLabels[m.role] || m.role
+          var dept = m.department ? ' · ' + m.department : ''
+          m.displayName = (m.name || m.nickname || '未命名') + ' (' + label + dept + ')'
+        })
+        self.setData({ assignableMembers: list })
+      })
+      .catch(function () {
+        self.setData({ assignableMembers: [] })
+      })
+  },
+
+  onAssignMemberChange: function (event) {
+    this.setData({ assignMemberIndex: event.detail.value })
+  },
+
+  hideAssignDialog: function () {
+    this.setData({ assignDialogVisible: false })
+  },
+
+  stopPropagation: function () {},
+
+  confirmAssign: function () {
+    var self = this
+    var members = this.data.assignableMembers
+    var member = members[this.data.assignMemberIndex]
+    if (!member) {
+      wx.showToast({ title: '请选择成员', icon: 'none' })
+      return
+    }
+    if (!member.department) {
+      wx.showToast({ title: '该成员未设置部门，无法分配', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: '确认分配',
+      content: '把这条预约分配给 ' + (member.name || member.nickname || '该成员') + ' 吗？',
+      success: function (r) {
+        if (!r.confirm) return
+        api.assignAppointment(self.data.assignAppointmentId, member.department, member.openid)
+          .then(function () {
+            wx.showToast({ title: '分配成功', icon: 'success' })
+            self.setData({ assignDialogVisible: false })
+            self.loadItems()
+          })
+          .catch(function (err) {
+            wx.showToast({ title: '分配失败:' + (err.message || err), icon: 'none' })
+          })
+      }
+    })
   },
 
   reviewApplication: function (event) {
@@ -275,7 +452,10 @@ Page({
           if (!result.confirm) return
           var reason = String(result.content || '').trim()
           if (!reason) {
-            wx.showToast({ title: '驳回原因不能为空', icon: 'none' })
+            wx.showToast({
+              title: '驳回原因不能为空',
+              icon: 'none'
+            })
             return
           }
           that.doReviewApplication(id, action, name, reason)
@@ -298,11 +478,17 @@ Page({
     var label = action === 'approve' ? '同意' : '拒绝'
     api.reviewApplication(id, action, reason)
       .then(function () {
-        wx.showToast({ title: label + '成功', icon: 'success' })
+        wx.showToast({
+          title: label + '成功',
+          icon: 'success'
+        })
         that.loadApplications()
       })
       .catch(function (err) {
-        wx.showToast({ title: '操作失败:' + (err.message || err), icon: 'none' })
+        wx.showToast({
+          title: '操作失败:' + (err.message || err),
+          icon: 'none'
+        })
       })
   },
 
@@ -323,22 +509,34 @@ Page({
           api.updateStatus(id, status)
             .then(function () {
               that.loadItems()
-              wx.showToast({ title: '状态已更新', icon: 'success' })
+              wx.showToast({
+                title: '状态已更新',
+                icon: 'success'
+              })
             })
             .catch(function (err) {
-              wx.showToast({ title: '更新失败:' + (err.message || err), icon: 'none' })
+              wx.showToast({
+                title: '更新失败:' + (err.message || err),
+                icon: 'none'
+              })
               that.loadItems()
             })
           return
         }
         var changed = appointments.updateStatus(id, status)
         if (!changed) {
-          wx.showToast({ title: '不允许这样变更状态', icon: 'none' })
+          wx.showToast({
+            title: '不允许这样变更状态',
+            icon: 'none'
+          })
           that.loadItems()
           return
         }
         that.loadItems()
-        wx.showToast({ title: '状态已更新', icon: 'success' })
+        wx.showToast({
+          title: '状态已更新',
+          icon: 'success'
+        })
       }
     })
   },
@@ -359,14 +557,19 @@ Page({
     var id = event.currentTarget.dataset.id
     var drafts = Object.assign({}, this.data.draftReplies)
     drafts[id] = event.detail.value
-    this.setData({ draftReplies: drafts })
+    this.setData({
+      draftReplies: drafts
+    })
   },
 
   submitReply: function (event) {
     var id = event.currentTarget.dataset.id
     var text = String(this.data.draftReplies[id] || '').trim()
     if (!text) {
-      wx.showToast({ title: '请先输入回复内容', icon: 'none' })
+      wx.showToast({
+        title: '请先输入回复内容',
+        icon: 'none'
+      })
       return
     }
     var that = this
@@ -376,26 +579,42 @@ Page({
         .then(function () {
           var drafts = Object.assign({}, that.data.draftReplies)
           drafts[id] = ''
-          that.setData({ draftReplies: drafts })
+          that.setData({
+            draftReplies: drafts
+          })
           that.loadItems()
-          wx.showToast({ title: '回复已发送', icon: 'success' })
+          wx.showToast({
+            title: '回复已发送',
+            icon: 'success'
+          })
         })
         .catch(function (err) {
-          wx.showToast({ title: '回复失败:' + (err.message || err), icon: 'none' })
+          wx.showToast({
+            title: '回复失败:' + (err.message || err),
+            icon: 'none'
+          })
         })
       return
     }
 
     var changed = appointments.replyTo(id, text)
     if (!changed) {
-      wx.showToast({ title: '回复失败，请重试', icon: 'none' })
+      wx.showToast({
+        title: '回复失败，请重试',
+        icon: 'none'
+      })
       return
     }
 
     var drafts = Object.assign({}, that.data.draftReplies)
     drafts[id] = ''
-    that.setData({ draftReplies: drafts })
+    that.setData({
+      draftReplies: drafts
+    })
     that.loadItems()
-    wx.showToast({ title: '回复已发送', icon: 'success' })
+    wx.showToast({
+      title: '回复已发送',
+      icon: 'success'
+    })
   }
 })

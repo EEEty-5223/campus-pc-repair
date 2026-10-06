@@ -31,6 +31,8 @@ function normalizeAppointment(row) {
     appointmentDate: row.appointment_date,
     timeSlot: row.time_slot,
     status: row.status,
+    assignedDepartment: row.assigned_department,
+    assignedOpenid: row.assigned_openid,
     createdAt: createdAt,
     createdAtText: formatDateTime(createdAt),
     updatedAt: updatedAt
@@ -57,7 +59,9 @@ function silentLogin() {
   try {
     var sysInfo = wx.getSystemInfoSync()
     isDevtools = sysInfo && sysInfo.platform === 'devtools'
-  } catch (e) { isDevtools = false }
+  } catch (e) {
+    isDevtools = false
+  }
 
   // 模拟器:用固定占位 openid,避免每次重编译 openid 变化导致查不到数据
   if (isDevtools && SIMULATOR_FALLBACK) {
@@ -90,7 +94,9 @@ function silentLogin() {
         wx.request({
           url: BASE_URL + '/api/login',
           method: 'POST',
-          data: { code: res.code },
+          data: {
+            code: res.code
+          },
           success: function (r) {
             if (r.data && r.data.ok) {
               resolve(r.data)
@@ -98,10 +104,14 @@ function silentLogin() {
               reject(new Error((r.data && r.data.error) || '登录失败'))
             }
           },
-          fail: function (e) { reject(e) }
+          fail: function (e) {
+            reject(e)
+          }
         })
       },
-      fail: function (e) { reject(e) }
+      fail: function (e) {
+        reject(e)
+      }
     })
   })
 }
@@ -129,7 +139,9 @@ function request(path, method, data) {
           resolve(r.data)
         }
       },
-      fail: function (e) { reject(e) }
+      fail: function (e) {
+        reject(e)
+      }
     })
   })
 }
@@ -159,11 +171,16 @@ module.exports = {
     })
   },
   updateStatus: function (id, status) {
-    return request('/api/appointments/status', 'POST', { id: id, status: status })
+    return request('/api/appointments/status', 'POST', {
+      id: id,
+      status: status
+    })
   },
   // 修改预约内容(仅待确认可改)
   updateAppointment: function (id, data) {
-    return request('/api/appointments/update', 'POST', Object.assign({ id: id }, data))
+    return request('/api/appointments/update', 'POST', Object.assign({
+      id: id
+    }, data))
   },
   // 返回的 list 已经是驼峰字段
   getMessages: function (id) {
@@ -209,7 +226,11 @@ module.exports = {
   },
   // 审核:同意或拒绝(super)  action='approve'|'reject'
   reviewApplication: function (id, action, reason) {
-    return request('/api/admin/applications/review', 'POST', { id: id, action: action, reason: reason || '' })
+    return request('/api/admin/applications/review', 'POST', {
+      id: id,
+      action: action,
+      reason: reason || ''
+    })
   },
   // 成员管理
   getMembers: function () {
@@ -217,5 +238,14 @@ module.exports = {
   },
   updateMember: function (data) {
     return request('/api/admin/whitelist', 'POST', data)
+  },
+  // 分配预约
+  assignAppointment: function (id, assignedDepartment, assignedOpenid) {
+    return request('/api/appointments/assign', 'POST', {
+      id: id,
+      assignedDepartment: assignedDepartment,
+      assignedOpenid: assignedOpenid
+    })
   }
+
 }

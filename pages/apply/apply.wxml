@@ -2,6 +2,7 @@
   <view class="apply-head">
     <view class="apply-title">申请加入社团</view>
     <view class="apply-subtitle">输入邀请码并填写信息，等待审核</view>
+    <view class="apply-subtitle">(非社团成员请联系社团成员获取邀请码)</view>
   </view>
 
   <!-- 已是管理员 -->

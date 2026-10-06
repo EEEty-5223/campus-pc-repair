@@ -17,7 +17,7 @@
     </view>
 
     <!-- 成员管理保持只有 admin -->
-    <view wx:if="{{role === 'admin'}}" class="tab-item ..." data-tab="members" bindtap="switchTab">成员管理</view>
+    <view wx:if="{{role === 'admin' || role === 'leader'}}" class="tab-item ..." data-tab="members" bindtap="switchTab">成员管理</view>
   </view>
 
 
@@ -70,12 +70,17 @@
           </view>
         </view>
 
+        <view wx:if="{{item.assignedDepartment || item.assignedOpenid}}" class="assign-info">
+          已分配：{{item.assignedDepartment}}
+        </view>
+
         <view class="admin-actions">
           <button class="mini-button detail-button" data-id="{{item.id}}" bindtap="goDetail">详情</button>
           <button class="mini-button confirm-button" wx:if="{{item.status === 'pending'}}" data-id="{{item.id}}" data-status="accepted" bindtap="changeStatus">确认预约</button>
           <button class="mini-button" wx:if="{{item.status === 'accepted'}}" data-id="{{item.id}}" data-status="repairing" bindtap="changeStatus">开始维修</button>
           <button class="mini-button complete-button" wx:if="{{item.status === 'repairing'}}" data-id="{{item.id}}" data-status="completed" bindtap="changeStatus">完成</button>
           <button class="mini-button cancel-button" wx:if="{{item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" data-status="cancelled" bindtap="changeStatus">取消</button>
+          <button class="mini-button" wx:if="{{(role === 'admin' || role === 'leader') && item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" bindtap="showAssign">分配</button>
         </view>
       </view>
     </view>
@@ -194,7 +199,7 @@
         </view>
 
         <view class="member-actions" wx:else>
-          <button class="mini-button detail-button" data-index="{{index}}" bindtap="toggleEditMember">编辑</button>
+          <button class="mini-button detail-button" wx:if="{{!item.isSelf}}" data-index="{{index}}" bindtap="toggleEditMember">编辑</button>
         </view>
       </view>
     </view>
@@ -205,4 +210,21 @@
       <text class="muted">通过邀请码让他人申请加入</text>
     </view>
   </block>
+
+  <!-- 分配预约弹窗 -->
+  <view class="assign-mask" wx:if="{{assignDialogVisible}}" bindtap="hideAssignDialog">
+    <view class="assign-dialog" catchtap="stopPropagation">
+      <view class="assign-title">分配预约</view>
+      <view class="assign-row">
+        <text class="assign-label">选择成员</text>
+        <picker mode="selector" range="{{assignableMembers}}" range-key="displayName" value="{{assignMemberIndex}}" bindchange="onAssignMemberChange">
+          <view class="assign-picker">{{assignableMembers[assignMemberIndex].displayName || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="assign-actions">
+        <button class="mini-button cancel-button" bindtap="hideAssignDialog">取消</button>
+        <button class="mini-button confirm-button" bindtap="confirmAssign">确认分配</button>
+      </view>
+    </view>
+  </view>
 </view>

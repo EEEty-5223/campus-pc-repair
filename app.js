@@ -12,6 +12,7 @@ App({
         self.globalData.openid = data.openid || ''
         self.globalData.isAdmin = data.isAdmin || false
         self.globalData.role = data.role || 'user'
+        self.globalData.department = data.department || ''
         console.log('[登录成功]', data)
         // 真机登录成功后,清理本地旧的演示数据,避免不同微信账号间看到混乱数据
         if (self.globalData.openid && self.globalData.openid !== 'simulator_openid_dev') {
