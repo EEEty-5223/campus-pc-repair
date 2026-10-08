@@ -46,7 +46,9 @@ function normalizeMessage(row) {
   return {
     id: String(row.id),
     from: row.from_role,
-    content: row.content,
+    type: row.type || 'text',
+    content: row.content || '',
+    imageUrl: row.image_url || '',
     at: at,
     atText: formatDateTime(at)
   }
@@ -196,7 +198,48 @@ module.exports = {
       appointmentId: id,
       role: role,
       openid: (app && app.globalData && app.globalData.openid) || '',
-      content: content
+      content: content,
+      type: 'text'
+    })
+  },
+  sendImageMessage: function (id, role, imageUrl) {
+    var app = getApp()
+    return request('/api/messages', 'POST', {
+      appointmentId: id,
+      role: role,
+      openid: (app && app.globalData && app.globalData.openid) || '',
+      content: '',
+      type: 'image',
+      imageUrl: imageUrl
+    })
+  },
+  uploadImage: function (filePath) {
+    var app = getApp()
+    return new Promise(function (resolve, reject) {
+      wx.uploadFile({
+        url: BASE_URL + '/api/upload',
+        filePath: filePath,
+        name: 'file',
+        header: {
+          'openid': (app && app.globalData && app.globalData.openid) || ''
+        },
+        success: function (res) {
+          var data = {}
+          try {
+            data = JSON.parse(res.data)
+          } catch (e) {
+            return reject(new Error('上传返回格式错误'))
+          }
+          if (data && data.ok) {
+            resolve(data.url)
+          } else {
+            reject(new Error((data && data.error) || '上传失败'))
+          }
+        },
+        fail: function (err) {
+          reject(err || new Error('上传失败'))
+        }
+      })
     })
   },
   // 提交管理员申请

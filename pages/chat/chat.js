@@ -134,5 +134,53 @@ Page({
 
     self.setData({ chatText: '' })
     self.loadItem()
+  },
+
+  chooseImage: function () {
+    var self = this
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: function (res) {
+        var filePath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath
+        if (!filePath) {
+          wx.showToast({ title: '未选择图片', icon: 'none' })
+          return
+        }
+        self.sendImage(filePath)
+      },
+      fail: function () {
+        wx.showToast({ title: '选择图片失败', icon: 'none' })
+      }
+    })
+  },
+
+  sendImage: function (filePath) {
+    var self = this
+    if (this.data.sending) return
+    this.setData({ sending: true })
+
+    api.uploadImage(filePath)
+      .then(function (imageUrl) {
+        return api.sendImageMessage(self.data.id, self.data.role, imageUrl)
+      })
+      .then(function () {
+        self.setData({ sending: false })
+        self.loadItem()
+      })
+      .catch(function (err) {
+        self.setData({ sending: false })
+        wx.showToast({ title: '图片发送失败:' + (err.message || err), icon: 'none' })
+      })
+  },
+
+  previewImage: function (event) {
+    var url = event.currentTarget.dataset.url
+    if (!url) return
+    wx.previewImage({
+      urls: [url],
+      current: url
+    })
   }
 })

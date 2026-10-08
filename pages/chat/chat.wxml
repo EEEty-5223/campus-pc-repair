@@ -29,19 +29,24 @@
         >
           <view class="chat-bubble">
             <view class="chat-meta">{{msg.fromText}} · {{msg.atText}}</view>
-            <view class="chat-text">{{msg.content}}</view>
+            <view wx:if="{{msg.type === 'image'}}" class="chat-image-wrap">
+              <image class="chat-image" src="{{msg.imageUrl}}" mode="widthFix" bindtap="previewImage" data-url="{{msg.imageUrl}}" lazy-load="true"></image>
+            </view>
+            <view wx:else class="chat-text">{{msg.content}}</view>
           </view>
         </view>
       </scroll-view>
     </view>
 
     <view class="chat-input-bar" wx:if="{{item.canReply}}">
-      <input
+      <view class="chat-image-btn" bindtap="chooseImage">+</view>
+      <textarea
         class="chat-input"
         placeholder="{{role === 'admin' ? '回复用户…' : '与社团沟通'}}"
         value="{{chatText}}"
         maxlength="200"
-        confirm-type="send"
+        auto-height
+        show-confirm-bar="{{false}}"
         bindinput="onChatInput"
         bindconfirm="sendMessage"
       />
