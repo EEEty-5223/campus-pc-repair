@@ -1,10 +1,22 @@
 // utils/api-request.js
 // 后端 API 封装:wx.login() → 发 /api/login → 拿到真实 openid
 
-const BASE_URL = 'https://campusapi.keon5223.xyz'
-// 模拟器 fallback 开关:true 时模拟器直接返回假 openid
-const SIMULATOR_FALLBACK = true
-
+// 开发版连接本机局域网；体验版、正式版保持线上服务。
+const PRODUCTION_BASE_URL = 'https://campusapi.keon5223.xyz'
+const LOCAL_BASE_URL = 'http://10.222.65.216:3000'
+// 仅本机开发工具启用独立普通成员，真机和发布版本使用微信登录。
+const LOCAL_DEV_MEMBER = true
+function useLocalMember() {
+  try { return LOCAL_DEV_MEMBER && wx.getAccountInfoSync().miniProgram.envVersion === 'develop' && wx.getSystemInfoSync().platform === 'devtools' } catch (_) { return false }
+}
+function resolveBaseUrl() {
+  try {
+    const info = wx.getAccountInfoSync()
+    return info && info.miniProgram && info.miniProgram.envVersion === 'develop'
+      ? (useLocalMember() ? 'http://127.0.0.1:3000' : LOCAL_BASE_URL) : PRODUCTION_BASE_URL
+  } catch (_) { return PRODUCTION_BASE_URL }
+}
+const BASE_URL = resolveBaseUrl()
 // 时间戳转显示文本(和 utils/appointments.js 保持一致)
 function formatDateTime(timestamp) {
   var date = new Date(timestamp)
@@ -54,66 +66,43 @@ function normalizeMessage(row) {
   }
 }
 
-// 静默登录
-function silentLogin() {
-  // 开发者工具(模拟器)环境检测
-  var isDevtools = false
-  try {
-    var sysInfo = wx.getSystemInfoSync()
-    isDevtools = sysInfo && sysInfo.platform === 'devtools'
-  } catch (e) {
-    isDevtools = false
-  }
-
-  // 模拟器:用固定占位 openid,避免每次重编译 openid 变化导致查不到数据
-  if (isDevtools && SIMULATOR_FALLBACK) {
-    console.warn('[silentLogin] 开发者工具模式,使用固定占位 openid')
-    return Promise.resolve({
-      ok: true,
-      openid: 'simulator_openid_dev',
-      isAdmin: false,
-      role: 'user',
-      _simulator: true
+// 模拟器和手机均通过微信凭证登录；身份与权限由后端返回。
+function silentLogin(options) {
+  if (useLocalMember()) {
+    return new Promise(function (resolve, reject) {
+      wx.request({ url: BASE_URL + '/api/local-dev/login', method: 'POST', data: {}, timeout: 10000,
+        success: function (r) {
+          var d = r && r.data
+          if (r.statusCode === 200 && d && d.ok && d._localDevelopment && d.role === 'member' && d.openid === 'local_test_member_xiaotangzhu' && /^localdev_[a-f0-9]{64}$/.test(d.notificationSession || '')) resolve(d)
+          else reject(new Error((d && d.error) || '独立测试成员登录失败'))
+        }, fail: function () { reject(new Error('无法连接本机测试成员，请启动本地后端')) } })
     })
   }
-
   return new Promise(function (resolve, reject) {
     wx.login({
+      timeout: 10000,
       success: function (res) {
-        if (!res.code) {
-          if (SIMULATOR_FALLBACK) {
-            console.warn('[silentLogin] 未拿到 code,使用占位 openid')
-            return resolve({
-              ok: true,
-              openid: 'simulator_openid_dev',
-              isAdmin: false,
-              role: 'user',
-              _simulator: true
-            })
-          }
-          return reject(new Error('wx.login 没拿到 code'))
+        if (!res || !res.code) {
+          return reject(new Error('微信登录未返回凭证，请确认开发者工具已扫码登录后重新编译'))
         }
         wx.request({
           url: BASE_URL + '/api/login',
           method: 'POST',
-          data: {
-            code: res.code
-          },
+          timeout: 15000,
+          data: { code: res.code },
           success: function (r) {
-            if (r.data && r.data.ok) {
-              resolve(r.data)
+            var data = r && r.data
+            if (r && r.statusCode >= 200 && r.statusCode < 300 && data && data.ok &&
+                typeof data.openid === 'string' && data.openid && data.openid !== 'simulator_openid_dev' && !data._simulator) {
+              resolve(data)
             } else {
-              reject(new Error((r.data && r.data.error) || '登录失败'))
+              reject(new Error((data && data.error) || '微信登录失败，请重新登录后重试'))
             }
           },
-          fail: function (e) {
-            reject(e)
-          }
+          fail: function () { reject(new Error('无法连接登录服务，请确认本地后端已启动')) }
         })
       },
-      fail: function (e) {
-        reject(e)
-      }
+      fail: function () { reject(new Error('微信登录失败，请确认开发者工具已扫码登录后重新编译')) }
     })
   })
 }
@@ -128,6 +117,7 @@ function request(path, method, data) {
       data: data || {},
       header: {
         'Content-Type': 'application/json',
+        'Authorization': (app && app.globalData && app.globalData.notificationSession) ? ('Bearer ' + app.globalData.notificationSession) : '',
         'openid': (app && app.globalData && app.globalData.openid) || ''
       },
       success: function (r) {
@@ -148,11 +138,58 @@ function request(path, method, data) {
   })
 }
 
+// 提醒接口单独使用真实微信登录取得的会话；不沿用可由客户端填写的 openid 鉴权。
+function notificationRequest(path, method, data, publicConfig, ownProfile, routeOverride) {
+  var app = getApp()
+  var globalData = (app && app.globalData) || {}
+  var session = globalData.notificationSession || ''
+  if (!publicConfig && (!session || !globalData.openid || globalData.isSimulator || globalData.openid === 'simulator_openid_dev')) {
+    return Promise.reject(Object.assign(new Error('请在微信真机登录后设置提醒'), { code: 'REAL_LOGIN_REQUIRED' }))
+  }
+  return new Promise(function (resolve, reject) {
+    var header = { 'Content-Type': 'application/json' }
+    if (!publicConfig) header.Authorization = 'Bearer ' + session
+    wx.request({
+      url: BASE_URL + (routeOverride || (ownProfile ? '/api/admin/profile/me' : '/api/admin/notifications/' + path)),
+      method: method || 'GET',
+      data: data || {},
+      header: header,
+      success: function (response) {
+        if (response.statusCode >= 200 && response.statusCode < 300 && response.data && response.data.ok) {
+          resolve(response.data)
+        } else {
+          var error = new Error((response.data && response.data.error) || '提醒服务暂时无法连接')
+          error.code = response.data && response.data.code
+          error.statusCode = response.statusCode
+          reject(error)
+        }
+      },
+      fail: function () { reject(new Error('网络连接失败，请稍后重试')) }
+    })
+  })
+}
+
 module.exports = {
   silentLogin: silentLogin,
   request: request,
   normalizeAppointment: normalizeAppointment,
   normalizeMessage: normalizeMessage,
+  getNotificationConfig: function () { return notificationRequest('config', 'GET', {}, true) },
+  getNotificationStatus: function () { return notificationRequest('status', 'GET') },
+  createNotificationChallenge: function () { return notificationRequest('challenge', 'POST') },
+  saveNotificationSubscription: function (data) { return notificationRequest('subscription', 'POST', data) },
+  stopNotificationSubscription: function () { return notificationRequest('subscription', 'DELETE') },
+  getMemberDirectory: function () { return notificationRequest('', 'GET', {}, false, false, '/api/members') },
+  getMemberDetail: function (openid) { return notificationRequest('', 'GET', {}, false, false, '/api/members/' + encodeURIComponent(openid)) },
+  updateMemberProfile: function (openid, profile) {
+    var patch = {}
+    ;['name', 'nickname', 'contact', 'department', 'displayTag', 'requestKey'].forEach(function (field) { if (Object.prototype.hasOwnProperty.call(profile, field)) patch[field] = profile[field] })
+    return notificationRequest('', 'PATCH', patch, false, false, '/api/members/' + encodeURIComponent(openid))
+  },
+  getMyProfileRequests: function () { return notificationRequest('', 'GET', {}, false, false, '/api/member/profile-requests/me') },
+  submitProfileRequest: function (data) { return notificationRequest('', 'POST', data, false, false, '/api/member/profile-requests/me') },
+  getProfileReviews: function () { return notificationRequest('', 'GET', {}, false, false, '/api/member/profile-requests/review') },
+  reviewProfileRequest: function (id, decision, reason) { return notificationRequest('', 'POST', { decision: decision, reason: reason || '' }, false, false, '/api/member/profile-requests/' + encodeURIComponent(id) + '/review') },
   createAppointment: function (data) {
     return request('/api/appointments', 'POST', data)
   },
@@ -278,9 +315,6 @@ module.exports = {
   // 成员管理
   getMembers: function () {
     return request('/api/admin/whitelist', 'GET')
-  },
-  updateMember: function (data) {
-    return request('/api/admin/whitelist', 'POST', data)
   },
   // 分配预约
   assignAppointment: function (id, assignedDepartment, assignedOpenid) {

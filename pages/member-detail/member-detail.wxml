@@ -1,0 +1,27 @@
+<view class="page member-detail-page">
+  <view wx:if="{{loading}}" class="loading-note">正在加载成员资料…</view>
+  <view wx:if="{{error}}" class="card error-note"><view>{{error}}</view><button wx:if="{{needsLogin}}" class="action-button" disabled="{{loading || saving}}" bindtap="relogin">重新微信登录</button><button wx:else class="action-button secondary" disabled="{{loading || saving}}" bindtap="refreshDetail">刷新资料</button></view>
+  <view wx:if="{{profile}}" class="card">
+    <view class="detail-title"><text class="role-badge role-{{profile.role}}">{{roleText}}</text><text>{{profile.name || profile.nickname || '未填写姓名'}}</text><text wx:if="{{profile.isSelf}}" class="self-tag">我</text></view>
+    <view wx:for="{{profileFields}}" wx:key="key" class="info-row"><text class="field-label">{{item.label}}</text><text class="field-value">{{item.value}}</text></view>
+    <view class="readonly-note">角色：{{roleText}}（只读）</view>
+    <view wx:if="{{profile.tag === 'permanent'}}" class="readonly-note">入社标记：永久邀请码（只读）</view>
+    <button wx:if="{{profile.canEdit && !editing && (profile.editMode === 'direct' || !pendingRequest) && !needsLogin}}" class="action-button" bindtap="beginEdit">{{profile.editMode === 'direct' ? (profile.isSelf ? '修改我的资料' : '修改成员资料') : '申请修改我的资料'}}</button>
+    <view wx:if="{{!profile.canEdit}}" class="readonly-note">此处展示已生效资料，当前账号不能直接修改该成员。</view>
+  </view>
+  <view wx:if="{{editing}}" class="card">
+    <view class="section-heading">{{saveMode === 'direct' ? '修改成员资料' : '申请修改资料'}}</view><view class="readonly-note">{{saveMode === 'direct' ? '保存后资料生效，修改记录保存在后台。' : '提交后资料保持原样，审核通过后才会更新。'}}</view>
+    <view class="edit-row"><text class="field-label">姓名</text><input class="edit-input" maxlength="32" data-field="name" value="{{draft.name}}" disabled="{{saving}}" bindinput="onDraftInput" /></view>
+    <view class="edit-row"><text class="field-label">昵称</text><input class="edit-input" maxlength="32" data-field="nickname" value="{{draft.nickname}}" disabled="{{saving}}" bindinput="onDraftInput" /></view>
+    <view class="edit-row"><text class="field-label">联系方式</text><input class="edit-input" maxlength="64" data-field="contact" value="{{draft.contact}}" disabled="{{saving}}" bindinput="onDraftInput" /></view>
+    <view class="edit-row"><text class="field-label">部门</text><input class="edit-input" maxlength="32" data-field="department" value="{{draft.department}}" placeholder="可填写自定义部门" disabled="{{saving || departmentReadonly}}" bindinput="onDraftInput" /></view>
+    <view wx:if="{{departmentReadonly}}" class="readonly-note">负责人仅管理本部门成员。跨部门修改需由本人申请或管理员处理。</view>
+    <view wx:if="{{profile.isSelf && profile.role === 'leader'}}" class="readonly-note">自己的部门变更需提交申请，由管理员审核。</view>
+    <view class="edit-row"><text class="field-label">展示标签</text><input class="edit-input" maxlength="50" data-field="displayTag" value="{{draft.displayTag}}" placeholder="维修专长 / 社团职位" disabled="{{saving}}" bindinput="onDraftInput" /></view>
+    <view class="readonly-note">角色、启用状态及入社标记不能在此修改。</view>
+    <view class="action-row"><button class="action-button" loading="{{saving}}" disabled="{{saving || needsLogin || (saveMode === 'request' && pendingRequest)}}" bindtap="submitChanges">{{saveMode === 'direct' ? '保存修改' : '提交修改申请'}}</button><button class="action-button secondary" disabled="{{saving}}" bindtap="cancelEdit">取消</button></view>
+  </view>
+  <view wx:if="{{pendingRequest}}" class="card pending-card"><view class="section-heading">{{profile.isSelf ? '我的修改申请' : '资料修改申请'}} · 待审核</view><view class="readonly-note">下列内容尚未生效，成员表仍显示原资料。</view><view wx:for="{{pendingRequest.changes}}" wx:key="key" class="change-row"><view class="field-label">{{item.label}}</view><view class="before-value">原：{{item.before}}</view><view class="after-value">申请：{{item.after}}</view></view></view>
+  <view wx:if="{{history.length}}" class="card"><view class="section-heading">我的申请记录</view><view wx:for="{{history}}" wx:key="id" class="history-row"><view>{{item.statusText}} · {{item.createdAt}}</view><view wx:if="{{item.reason}}" class="readonly-note">说明：{{item.reason}}</view></view></view>
+  <view wx:if="{{canReview}}" class="card"><view class="review-heading"><view class="section-heading">待审资料申请</view><button class="small-button" disabled="{{reviewsLoading || reviewBusy}}" bindtap="loadReviews">刷新</button></view><view wx:if="{{reviewError}}" class="error-note">{{reviewError}}</view><view wx:if="{{reviewsLoading}}" class="readonly-note">正在加载待审申请…</view><view wx:for="{{reviews}}" wx:key="id" class="review-request"><view class="review-name">{{item.requesterName || item.requesterProfile.name || '社团成员'}} · 待审核</view><view wx:for="{{item.changes}}" wx:for-item="change" wx:key="key" class="change-row"><view class="field-label">{{change.label}}</view><view class="before-value">原：{{change.before}}</view><view class="after-value">申请：{{change.after}}</view></view><view wx:if="{{item.canAct}}" class="action-row"><button class="action-button" disabled="{{reviewBusy}}" data-id="{{item.id}}" data-decision="approve" bindtap="reviewRequest">通过申请</button><button class="action-button secondary" disabled="{{reviewBusy}}" data-id="{{item.id}}" data-decision="reject" bindtap="reviewRequest">拒绝</button></view></view><view wx:if="{{!reviews.length && !reviewsLoading}}" class="readonly-note">当前没有可审核的资料申请。</view></view>
+</view>

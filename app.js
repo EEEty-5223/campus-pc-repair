@@ -13,7 +13,10 @@ App({
         self.globalData.isAdmin = data.isAdmin || false
         self.globalData.role = data.role || 'user'
         self.globalData.department = data.department || ''
-        console.log('[登录成功]', data)
+        self.globalData.notificationSession = data._simulator ? '' : (data.notificationSession || '')
+        self.globalData.notificationSessionExpiresAt = data.notificationSessionExpiresAt || ''
+        self.globalData.isSimulator = !!data._simulator
+        console.log('[登录成功]', { role: self.globalData.role, isAdmin: self.globalData.isAdmin })
         // 真机登录成功后,清理本地旧的演示数据,避免不同微信账号间看到混乱数据
         if (self.globalData.openid && self.globalData.openid !== 'simulator_openid_dev') {
           appointments.clearDemoData && appointments.clearDemoData()
@@ -27,11 +30,14 @@ App({
   },
   globalData: {
     appName: '校园电脑维修预约',
-    version: '1.0.0',
+    version: '1.3.0',
     // 登录后填
     openid: '',
     isAdmin: false,
     role: 'user',
+    notificationSession: '',
+    notificationSessionExpiresAt: '',
+    isSimulator: false,
     loginReady: null
   }
 })

@@ -83,12 +83,57 @@
 }
 
 .service-card {
+  display: block;
   box-sizing: border-box;
-  min-height: 210rpx;
+  width: 100%;
+  min-height: 270rpx;
+  margin: 0;
   padding: 28rpx;
+  color: #172033;
+  line-height: 1.5;
+  text-align: left;
   background: #ffffff;
   border: 1rpx solid #e8edf5;
   border-radius: 22rpx;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.service-card-pressed {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  transform: translateY(2rpx);
+}
+
+.service-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+  color: #2563eb;
+  font-size: 23rpx;
+  font-weight: 600;
+}
+
+.service-arrow {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.record-retry {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  margin: 12rpx auto 0;
+  padding: 8rpx 20rpx;
+  color: #ffffff;
+  font-size: 23rpx;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 12rpx;
+}
+
+.record-retry-pressed {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .service-icon {
@@ -212,3 +257,5 @@
   color: #2563eb;
   font-weight: 600;
 }
+
+.unread-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 34rpx; height: 34rpx; margin-left: 12rpx; padding: 0 9rpx; box-sizing: border-box; border-radius: 18rpx; background: #ef4444; color: #fff; font-size: 22rpx; line-height: 34rpx; vertical-align: middle; }

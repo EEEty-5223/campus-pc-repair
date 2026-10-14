@@ -1,0 +1,20 @@
+const test=require('node:test'), assert=require('node:assert/strict'), fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.resolve(__dirname,'..');
+function fixture(storage={}){
+ const module={exports:{}};
+ vm.runInNewContext(fs.readFileSync(path.join(root,'utils/chat-unread.js'),'utf8'),{module,wx:{getStorageSync:k=>storage[k],setStorageSync:(k,v)=>storage[k]=JSON.parse(JSON.stringify(v))},Promise});
+ return {unread:module.exports,storage};
+}
+test('only incoming messages count; duplicate IDs and own messages do not count',()=>{const {unread:u}=fixture();assert.equal(u.countUnread('a','p','user',[{id:1,from:'admin'},{id:1,from:'admin'},{id:2,from:'user'},{id:3,from:'admin',type:'image'}]),2);assert.equal(u.countUnread('a','p','admin',[{id:1,from:'user'},{id:2,from:'admin'}]),1);});
+test('read position persists; stale page response cannot move it backward',()=>{const f=fixture(),u=f.unread;u.markRead('a','p','user',[{id:'100',from:'admin'}]);u.markRead('a','p','user',[{id:'9',from:'admin'}]);const restored=fixture(f.storage).unread;assert.equal(restored.countUnread('a','p','user',[{id:'100',from:'admin'},{id:'101',from:'admin'}]),1);});
+test('accounts, appointment IDs and conversation sides have independent read marks',()=>{const {unread:u}=fixture();const m=[{id:'10',from:'admin'}];u.markRead('a','p','user',m);assert.equal(u.countUnread('a','p','user',m),0);assert.equal(u.countUnread('b','p','user',m),1);assert.equal(u.countUnread('a','q','user',m),1);assert.equal(u.countUnread('a','p','admin',[{id:'10',from:'user'}]),1);});
+test('large IDs remain precise and legacy string IDs can be read',()=>{const {unread:u}=fixture();u.markRead('a','p','user',[{id:'90071992547409930',from:'admin'},{id:'MSG-old',from:'admin'}]);assert.equal(u.countUnread('a','p','user',[{id:'90071992547409931',from:'admin'},{id:'MSG-old',from:'admin'},{id:'MSG-new',from:'admin'}]),2);});
+test('overview totals ended and active messages with at most three concurrent requests',async()=>{const {unread:u}=fixture();let active=0,max=0;const api={getMyAppointments:async()=>({list:Array.from({length:7},(_,i)=>({id:'p'+i,status:i%2?'completed':'pending'}))}),getMessages:async id=>{active++;max=Math.max(active,max);await new Promise(resolve=>setImmediate(resolve));active--;return {list:[{id:'1',from:'admin'}]}}};const result=await u.overview('a',api);assert.equal(result.total,7);assert.equal(Object.keys(result.counts).length,7);assert.equal(max,3);});
+test('fetch failure rejects overview instead of replacing unread total with zero',async()=>{const {unread:u}=fixture();await assert.rejects(u.overview('a',{getMyAppointments:async()=>({list:[{id:'p'}]}),getMessages:async()=>{throw Error('network')}}));});
+test('home badge updates, survives network failure and discards result after hiding',async()=>{
+ const {unread:u}=fixture();const app={globalData:{openid:'a',isAdmin:false}};let failure=false,resolvePending,delayed=false;
+ const api={getMyAppointments:async()=>({list:[{id:'p'}]}),getMessages:()=>failure?Promise.reject(Error('network')):delayed?new Promise(r=>resolvePending=r):Promise.resolve({list:[{id:'1',from:'admin'},{id:'2',from:'admin'}]})};
+ let page;vm.runInNewContext(fs.readFileSync(path.join(root,'pages/index/index.js'),'utf8'),{Page:v=>page=v,getApp:()=>app,require:n=>n.includes('api-request')?api:n.includes('chat-unread')?u:{},wx:{},Promise,setInterval:()=>1,clearInterval(){},console});page.data=JSON.parse(JSON.stringify(page.data));page.setData=p=>Object.assign(page.data,p);page._homeVisible=true;
+ await page.refreshUnread();assert.equal(page.data.unreadCount,2);failure=true;await page.refreshUnread();assert.equal(page.data.unreadCount,2);assert.equal(page.data.unreadError,true);
+ failure=false;delayed=true;const pending=page.refreshUnread();await new Promise(r=>setImmediate(r));page.onHide();resolvePending({list:[{id:'3',from:'admin'}]});await pending;assert.equal(page.data.unreadCount,2);
+});

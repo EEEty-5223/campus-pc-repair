@@ -2,6 +2,12 @@ var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
 var USE_BACKEND = true   // 切换:走后端 API / 本地存储
 var DRAFT_KEY = 'campus…t_v1'
+var SERVICE_FAULTS = {
+  system: '系统与软件',
+  maintenance: '清灰与保养',
+  hardware: '硬件或外设',
+  network: '网络问题'
+}
 
 function formatDate(date) {
   var month = String(date.getMonth() + 1).padStart(2, '0')
@@ -54,6 +60,7 @@ Page({
     appointmentDate: '',
     editId: '',
     isEditing: false,
+    servicePrefilled: false,
     formData: {
       name: '',
       phone: '',
@@ -113,6 +120,12 @@ Page({
       this.loadForEdit(options.id)
     } else {
       this.loadDraft()      // ← 新增:打开就尝试载入草稿
+      // 首页明确选择的服务只覆盖草稿的故障类别；联系人等内容仍保留。
+      var service = options && options.service
+      if (typeof service === 'string' && Object.prototype.hasOwnProperty.call(SERVICE_FAULTS, service)) {
+        var selectedIndex = this.data.faultTypes.indexOf(SERVICE_FAULTS[service])
+        if (selectedIndex >= 0) this.setData({ faultIndex: selectedIndex, servicePrefilled: true })
+      }
     }
   },  
 

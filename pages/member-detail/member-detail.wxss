@@ -1,0 +1,16 @@
+.loading-note,.readonly-note { color:#64748b;font-size:23rpx;line-height:1.7;margin:12rpx 0; }
+.detail-title { display:flex;align-items:center;gap:14rpx;font-size:32rpx;font-weight:700;margin-bottom:24rpx;flex-wrap:wrap; }
+.role-badge,.self-tag { padding:6rpx 14rpx;border-radius:10rpx;font-size:21rpx;font-weight:500; }
+.role-admin { background:#dbeafe;color:#1d4ed8; }.role-leader { background:#ede9fe;color:#7c3aed; }.role-member { background:#ccfbf1;color:#0f766e; }.self-tag{background:#eff6ff;color:#2563eb;}
+.info-row,.edit-row { display:flex;gap:16rpx;align-items:flex-start;margin:20rpx 0; }
+.field-label { color:#64748b;font-size:24rpx;flex-shrink:0;width:132rpx;line-height:1.7; }
+.field-value { color:#334155;font-size:26rpx;line-height:1.6;min-width:0;flex:1;overflow-wrap:anywhere; }
+.edit-input { flex:1;min-width:0;border:1rpx solid #dbe3ef;border-radius:10rpx;background:#f8fafc;padding:14rpx;font-size:24rpx; }
+.section-heading { font-size:29rpx;font-weight:700;color:#1e293b;margin-bottom:16rpx; }
+.action-button { background:#2563eb;color:white;font-size:25rpx;border-radius:12rpx;line-height:76rpx;margin:20rpx 0 0;padding:0 24rpx; }
+.action-button.secondary { background:#f1f5f9;color:#475569; }.action-button[disabled]{background:#e2e8f0;color:#94a3b8;}
+.action-row { display:flex;gap:12rpx;flex-wrap:wrap; }.action-row .action-button {flex:1;min-width:140rpx;}
+.error-note { background:#fff1f0;color:#b42318;font-size:24rpx;line-height:1.7; }.pending-card { border-color:#fed7aa; }
+.change-row,.history-row,.review-request { padding:18rpx 0;border-bottom:1rpx solid #e8edf5; }.change-row:last-child,.review-request:last-child,.history-row:last-child{border-bottom:none;}
+.before-value { color:#64748b;font-size:24rpx;line-height:1.7;overflow-wrap:anywhere; }.after-value { color:#1d4ed8;font-size:25rpx;line-height:1.7;overflow-wrap:anywhere; }.history-row{font-size:24rpx;color:#475569;}
+.review-heading { display:flex;justify-content:space-between;align-items:center;gap:16rpx; }.small-button{margin:0;padding:0 20rpx;background:#eff6ff;color:#2563eb;line-height:56rpx;font-size:23rpx;}.review-name{font-size:27rpx;font-weight:600;color:#334155;}

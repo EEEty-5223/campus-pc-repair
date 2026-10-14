@@ -1,23 +1,44 @@
 <view class="page admin-page">
   <view class="admin-head">
     <view class="admin-title">社团后台</view>
+    <view class="admin-count">预约与社团事务</view>
+  </view>
+
+  <view wx:if="{{role === 'admin'}}" class="card notification-card">
+    <view class="notification-heading">
+      <view class="notification-title">新预约提醒</view>
+      <text class="notification-status {{notificationActive ? 'notification-status-active' : ''}}">{{notificationLoading ? '检查中' : notificationStatus}}</text>
+    </view>
+    <view class="notification-description">{{notificationDescription}}</view>
+    <view class="notification-note" wx:if="{{notificationReady && notificationType === 'once'}}">每次允许仅订阅一条提醒，用完后需要再次授权，不能一次开启永久提醒。</view>
+    <view class="notification-meta" wx:if="{{notificationActive && notificationType === 'once'}}">已登记 {{notificationClaims}} 次授权，实际可发送次数以微信为准。</view>
+    <view class="notification-meta" wx:if="{{notificationLastDelivery}}">{{notificationLastDelivery}}</view>
+    <view class="notification-actions">
+      <button wx:if="{{notificationReady && !notificationNeedsLogin && !notificationNeedsSettings && !notificationCanRetry}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy || notificationLoading || !notificationCanSubscribe}}" bindtap="subscribeNotifications">{{notificationType === 'once' ? '订阅一次提醒' : '开启预约提醒'}}</button>
+      <button wx:if="{{notificationNeedsLogin}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy}}" bindtap="reloginNotifications">重新登录</button>
+      <button wx:if="{{notificationCanRetry}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy}}" bindtap="savePendingNotificationSubscription">重试登记</button>
+      <button wx:if="{{notificationNeedsSettings}}" class="mini-button" disabled="{{notificationBusy}}" bindtap="openNotificationSettings">订阅设置</button>
+      <button wx:if="{{!notificationNeedsLogin}}" class="mini-button detail-button" disabled="{{notificationBusy || notificationLoading}}" bindtap="loadNotificationStatus">刷新状态</button>
+      <button wx:if="{{notificationActive}}" class="notification-stop" disabled="{{notificationBusy}}" bindtap="stopNotifications">暂停提醒</button>
+    </view>
+    <view class="notification-footnote">通知会出现在微信“服务通知”中。退出小程序后仍可发送；锁屏提示需在手机和微信中开启通知。</view>
   </view>
 
   <!-- Tab 切换栏 -->
   <view class="tab-bar">
-    <view class="tab-item ..." data-tab="appointments" bindtap="switchTab">预约处理</view>
+    <view class="tab-item {{activeTab === 'appointments' ? 'tab-active' : ''}}" data-tab="appointments" bindtap="switchTab">预约处理</view>
 
     <!-- admin 和 leader 都能生成邀请码 -->
-    <view wx:if="{{role === 'admin' || role === 'leader'}}" class="tab-item ..." data-tab="invite" bindtap="switchTab">邀请码</view>
+    <view wx:if="{{role === 'admin' || role === 'leader'}}" class="tab-item {{activeTab === 'invite' ? 'tab-active' : ''}}" data-tab="invite" bindtap="switchTab">邀请码</view>
 
     <!-- 只有 admin 能处理申请 -->
-    <view wx:if="{{role === 'admin'}}" class="tab-item ..." data-tab="apply" bindtap="switchTab">
+    <view wx:if="{{role === 'admin'}}" class="tab-item {{activeTab === 'apply' ? 'tab-active' : ''}}" data-tab="apply" bindtap="switchTab">
       申请审核
       <text wx:if="{{pendingApplications > 0}}" class="tab-badge">{{pendingApplications}}</text>
     </view>
 
     <!-- 成员管理保持只有 admin -->
-    <view wx:if="{{role === 'admin' || role === 'leader'}}" class="tab-item ..." data-tab="members" bindtap="switchTab">成员管理</view>
+    <view wx:if="{{role === 'admin' || role === 'leader' || role === 'member'}}" class="tab-item {{activeTab === 'members' ? 'tab-active' : ''}}" data-tab="members" bindtap="switchTab">成员管理</view>
   </view>
 
 
@@ -44,7 +65,12 @@
       </view>
     </scroll-view>
 
-    <view wx:if="{{items.length}}">
+    <view class="card list-state" wx:if="{{itemsLoading}}">正在加载预约…</view>
+    <view class="card list-state list-error" wx:elif="{{itemsError}}">
+      <view>预约加载失败，请检查网络后重试。</view>
+      <button class="mini-button detail-button" bindtap="loadItems">重新加载</button>
+    </view>
+    <view wx:elif="{{items.length}}">
       <view class="card admin-card" wx:for="{{items}}" wx:key="id">
         <view class="admin-top">
           <view>
@@ -58,10 +84,11 @@
         <view class="schedule">{{item.appointmentDate}} {{item.timeSlot}} · {{item.location}}</view>
 
         <view class="reply-box" wx:if="{{item.canReply}}">
-          <view class="reply-title">沟通记录（共 {{item.messages.length}} 条）</view>
-          <view class="reply-existing" wx:if="{{item.latestMessage}}">
+          <view class="reply-title">{{item._messagesFailed ? '消息暂时无法更新' : '沟通记录（共 ' + item.messages.length + ' 条）'}}</view>
+          <view class="reply-existing {{item.latestMessage.viewerClass}}" wx:if="{{item.latestMessage}}">
             <text class="reply-existing-label">{{item.latestMessage.fromText}}（{{item.latestMessage.atText}}）：</text>
-            <text class="reply-existing-content">{{item.latestMessage.content}}</text>
+            <image wx:if="{{item.latestMessage.type === 'image'}}" class="reply-preview-image" src="{{item.latestMessage.imageUrl}}" mode="widthFix" data-url="{{item.latestMessage.imageUrl}}" bindtap="previewReplyImage" />
+            <text wx:else class="reply-existing-content">{{item.latestMessage.content}}</text>
           </view>
           <textarea class="reply-input" placeholder="快速回复，发送后进入沟通记录" maxlength="30" value="{{draftReplies[item.id]}}" data-id="{{item.id}}" bindinput="onReplyInput" />
           <view class="reply-actions">
@@ -88,7 +115,7 @@
     <view class="card empty-state" wx:else>
       <text class="empty-icon">📭</text>
       <text class="empty-title">当前筛选下暂无预约</text>
-      <text class="muted">可以切换上方状态，或先从用户端提交预约</text>
+      <text class="muted">可以切换上方状态；有新的预约后会显示在这里</text>
     </view>
   </block>
 
@@ -150,65 +177,26 @@
     </view>
   </block>
 
-  <!-- ========== Tab 4: 成员管理 ========== -->
+  <!-- 成员表：资料在独立详情页中维护，修改须提交申请。 -->
   <block wx:if="{{activeTab === 'members'}}">
-    <view wx:if="{{members.length}}">
-      <view class="card member-card" wx:for="{{members}}" wx:key="openid">
-        <view class="member-top">
-          <view>
-            <view class="member-name">{{item.name || item.nickname || '未命名'}}</view>
-            <view class="member-openid">{{item.openid}}</view>
-          </view>
-          <text class="member-role-pill role-{{item.role}}">{{item.roleText}}</text>
-        </view>
-
-        <view class="member-meta" wx:if="{{item.contact}}">联系方式：{{item.contact}}</view>
-        <view class="member-meta" wx:if="{{item.department}}">部门：{{item.department}}</view>
-        <view class="member-meta" wx:if="{{!item.contact && !item.department}}">暂无部门和联系方式</view>
-
-        <!-- 编辑模式 -->
-        <view class="member-edit" wx:if="{{item.editing}}">
-          <view class="edit-row">
-            <text class="edit-label">昵称/姓名</text>
-            <input class="edit-input" data-index="{{index}}" data-field="nickname" value="{{item.nickname}}" bindinput="onMemberFieldChange" />
-          </view>
-          <view class="edit-row">
-            <text class="edit-label">姓名（实名）</text>
-            <input class="edit-input" data-index="{{index}}" data-field="name" value="{{item.name}}" bindinput="onMemberFieldChange" />
-          </view>
-          <view class="edit-row">
-            <text class="edit-label">联系方式</text>
-            <input class="edit-input" data-index="{{index}}" data-field="contact" value="{{item.contact}}" placeholder="手机号/微信号" bindinput="onMemberFieldChange" />
-          </view>
-          <view class="edit-row">
-            <text class="edit-label">角色</text>
-            <picker mode="selector" range="{{memberRoles}}" value="{{item.roleIndex}}" data-index="{{index}}" data-field="role" bindchange="onMemberFieldChange">
-              <view class="edit-picker">{{item.roleText}}</view>
-            </picker>
-          </view>
-          <view class="edit-row">
-            <text class="edit-label">部门</text>
-            <picker mode="selector" range="{{memberDepartments}}" value="{{item.departmentIndex}}" data-index="{{index}}" data-field="department" bindchange="onMemberFieldChange">
-              <view class="edit-picker">{{item.department || '请选择'}}</view>
-            </picker>
-          </view>
-          <view class="member-actions">
-            <button class="mini-button complete-button" data-index="{{index}}" bindtap="saveMember">保存</button>
-            <button class="mini-button detail-button" data-index="{{index}}" bindtap="toggleEditMember">取消</button>
-          </view>
-        </view>
-
-        <view class="member-actions" wx:else>
-          <button class="mini-button detail-button" wx:if="{{!item.isSelf}}" data-index="{{index}}" bindtap="toggleEditMember">编辑</button>
-        </view>
+    <view class="card member-summary-card">
+      <view class="member-summary-top"><view class="notification-title">社团成员表</view><button class="member-refresh" disabled="{{membersLoading}}" bindtap="loadMembers">刷新</button></view>
+      <view class="member-meta">可见成员共 {{memberStats.total}} 人。自己的资料排在所在表的首位。</view>
+      <view class="member-meta">点姓名查看详情。成员本人修改需审核，负责人和管理员按权限维护资料。</view>
+      <view class="member-meta">管理员 admin · 负责人 leader · 成员 member</view>
+      <button wx:if="{{role === 'admin' || role === 'leader'}}" class="mini-button detail-button" bindtap="goProfileReviews">资料修改审核</button>
+    </view>
+    <scroll-view class="filter-scroll directory-tabs" scroll-x="true" show-scrollbar="false"><view class="filter-row"><view wx:for="{{memberDepartmentFilters}}" wx:key="value" class="filter-chip {{memberDepartmentFilter === item.value ? 'filter-chip-active' : ''}}" data-department="{{item.value}}" bindtap="selectMemberDepartment">{{item.label}} {{item.count}}</view></view></scroll-view>
+    <view wx:if="{{membersLoading}}" class="member-load-note">正在加载成员表…</view>
+    <view wx:if="{{membersError}}" class="card profile-error"><view>{{membersErrorText}}</view><button wx:if="{{membersNeedLogin}}" class="mini-button" bindtap="reloginMembers">重新微信登录</button></view>
+    <view wx:if="{{directoryMembers.length}}" class="card directory-list">
+      <view wx:for="{{directoryMembers}}" wx:key="openid" class="directory-row" data-openid="{{item.openid}}" bindtap="goMemberDetail">
+        <view class="directory-name-row"><text class="member-role-pill role-{{item.role}}">{{item.roleText}}</text><text class="directory-name">{{item.name || item.nickname || '未填写姓名'}}</text><text wx:if="{{item.isSelf}}" class="directory-self">我</text><text class="directory-arrow">›</text></view>
+        <view class="directory-meta">{{item.department || '未分配'}}<text wx:if="{{item.displayTag}}"> · {{item.displayTag}}</text></view>
+        <text wx:if="{{item.hasPendingRequest}}" class="request-pending-tag">资料修改待审核</text>
       </view>
     </view>
-
-    <view class="card empty-state" wx:else>
-      <text class="empty-icon">👥</text>
-      <text class="empty-title">暂无成员</text>
-      <text class="muted">通过邀请码让他人申请加入</text>
-    </view>
+    <view wx:elif="{{!membersLoading && !membersError}}" class="card empty-state"><text class="empty-title">这张表暂时没有成员</text><text class="muted">可切换其他成员表查看</text></view>
   </block>
 
   <!-- 分配预约弹窗 -->

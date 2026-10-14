@@ -1,3 +1,19 @@
+/* 新预约提醒：沿用后台蓝色，状态和授权说明独立于预约处理。 */
+.notification-card { padding: 28rpx; border: 1rpx solid #dbeafe; }
+.notification-heading { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.notification-title { font-size: 29rpx; font-weight: 700; color: #1e293b; }
+.notification-status { padding: 7rpx 16rpx; font-size: 21rpx; color: #475569; background: #f1f5f9; border-radius: 999rpx; }
+.notification-status-active { color: #1d4ed8; background: #eff6ff; }
+.notification-description { margin-top: 18rpx; font-size: 25rpx; line-height: 1.7; color: #334155; }
+.notification-note { margin-top: 14rpx; padding: 16rpx; font-size: 23rpx; line-height: 1.6; color: #1d4ed8; background: #eff6ff; border-radius: 12rpx; }
+.notification-meta, .notification-footnote { margin-top: 14rpx; font-size: 22rpx; line-height: 1.65; color: #64748b; }
+.notification-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12rpx; margin-top: 22rpx; }
+.notification-stop { margin: 0; padding: 0 8rpx; font-size: 23rpx; color: #64748b; background: transparent; line-height: 64rpx; }
+.notification-stop::after { border: none; }
+.notification-actions button[disabled] { color: #94a3b8; background: #f1f5f9; }
+.list-state { padding: 32rpx; text-align: center; color: #64748b; font-size: 25rpx; }
+.list-error button { margin: 20rpx auto 0; display: inline-block; }
+
 /* ===== Tab 切换栏 ===== */
 .tab-bar {
   display: flex;
@@ -371,6 +387,8 @@
 }
 
 .reply-existing {
+  width: fit-content;
+  max-width: 85%;
   margin-bottom: 14rpx;
   padding: 14rpx 16rpx;
   font-size: 23rpx;
@@ -378,6 +396,11 @@
   background: #eff6ff;
   border-radius: 10rpx;
 }
+.reply-existing.reply-own { margin-left:auto;background:#2563eb;color:#ffffff;border-top-right-radius:4rpx; }
+.reply-existing.reply-other { margin-right:auto;background:#ffffff;border:1rpx solid #dbeafe;border-top-left-radius:4rpx; }
+.reply-own .reply-existing-label,.reply-own .reply-existing-content { color:#ffffff; }
+.reply-other .reply-existing-label { color:#1d4ed8; }
+.reply-preview-image { display:block;max-width:100%;width:240rpx;border-radius:10rpx;margin-top:10rpx; }
 
 .reply-existing-label {
   color: #1d4ed8;
@@ -408,6 +431,35 @@
 }
 
 /* ===== 成员管理 ===== */
+.directory-list { padding: 0 26rpx; }
+.directory-row { padding: 26rpx 0; border-bottom: 1rpx solid #e8edf5; }
+.directory-row:last-child { border-bottom: none; }
+.directory-name-row { display: flex; gap: 12rpx; align-items: center; }
+.directory-name { color: #1e293b; font-size: 28rpx; font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.directory-self { color: #2563eb; background: #eff6ff; border-radius: 8rpx; padding: 4rpx 10rpx; font-size: 21rpx; }
+.directory-arrow { color: #94a3b8; font-size: 38rpx; }
+.directory-meta { color: #64748b; font-size: 23rpx; line-height: 1.6; margin-top: 10rpx; }
+.request-pending-tag { display: inline-block; margin-top: 10rpx; padding: 5rpx 12rpx; background: #fff7ed; color: #b45309; border-radius: 8rpx; font-size: 21rpx; }
+.profile-heading, .member-summary-top, .member-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.profile-name { margin: 22rpx 0 12rpx; font-size: 32rpx; font-weight: 700; color: #1e293b; }
+.self-profile-card > .member-meta { margin-top: 16rpx; line-height: 1.7; }
+.profile-error { margin: 16rpx 0; padding: 18rpx; color: #b42318; background: #fff1f0; border-radius: 12rpx; font-size: 23rpx; line-height: 1.65; }
+.member-stat-row { display: flex; justify-content: space-between; margin: 24rpx 0 20rpx; text-align: center; gap: 12rpx; }
+.member-stat-row > view { flex: 1; }
+.member-stat-value { display: block; color: #2563eb; font-size: 36rpx; font-weight: 800; }
+.member-stat-label { display: block; color: #64748b; font-size: 22rpx; margin-top: 8rpx; }
+.member-refresh { margin: 0; padding: 0 14rpx; font-size: 24rpx; line-height: 56rpx; color: #2563eb; background: #eff6ff; border-radius: 10rpx; }
+.member-group-heading { margin: 10rpx 4rpx 18rpx; font-size: 27rpx; font-weight: 700; color: #334155; }
+.member-group-count { color: #64748b; font-size: 23rpx; font-weight: 400; }
+.member-tag-row { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 12rpx; }
+.display-tag, .business-tag, .member-inactive { display: inline-block; padding: 6rpx 14rpx; border-radius: 8rpx; font-size: 21rpx; }
+.display-tag { color: #1d4ed8; background: #eff6ff; }
+.business-tag { color: #64748b; background: #f1f5f9; }
+.member-inactive { color: #b42318; background: #fff1f0; }
+.member-load-note { margin: 0 4rpx 18rpx; font-size: 23rpx; line-height: 1.6; color: #64748b; }
+.edit-readonly { flex: 1; color: #64748b; font-size: 24rpx; }
+.member-edit .edit-input { min-width: 0; }
+.member-edit .edit-row > picker { flex: 1; min-width: 0; }
 .member-card {
   padding: 24rpx;
 }

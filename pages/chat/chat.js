@@ -1,186 +1,119 @@
 var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
-var USE_BACKEND = true
-
+var unread = require('../../utils/chat-unread')
+var LEAVE_MESSAGE = '离开聊天后收不到新消息推送，请回首页“快速沟通”查看未读消息。'
 Page({
-  data: {
-    id: '',
-    role: 'user',
-    item: null,
-    chatText: '',
-    sending: false,
-    scrollIntoView: ''
+  data: { id: '', role: 'user', item: null, chatText: '', sending: false, scrollIntoView: '', loading: false, loadError: '', nativeLeavePrompt: false },
+  onLoad: function (options) { this._requestedAdmin = !!(options && options.role === 'admin'); this.setData({ id: (options && options.id) || '' }) },
+  resolveViewerRole: function () {
+    var user = (getApp() && getApp().globalData) || {}
+    return this._requestedAdmin && user.notificationSession && !user.isSimulator && user.openid !== 'simulator_openid_dev' && ['admin', 'leader', 'member'].indexOf(user.role) !== -1 ? 'admin' : 'user'
   },
-
-  onLoad: function (options) {
-    this.setData({
-      id: options.id || '',
-      role: options.role === 'admin' ? 'admin' : 'user'
-    })
+  chatIdentity: function () {
+    var user = (getApp() && getApp().globalData) || {}
+    return (user.openid || '') + ':' + (user.notificationSession || '') + ':' + (user.role || '') + ':' + this.data.id + ':' + this.resolveViewerRole()
   },
-
   onShow: function () {
-    var self = this
-    var app = getApp()
-    // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
-    if (app && app.globalData && app.globalData.loginReady) {
-      app.globalData.loginReady
-        .then(function () { self.loadItem() })
-        .catch(function () { self.loadItem() })
-    } else {
-      self.loadItem()
+    var self = this, app = getApp(), version = (this._visibilityVersion || 0) + 1
+    this._disposed = false; this._visible = true; this._visibilityVersion = version; this.stopPolling(); this.setData({ sending: false })
+    if (typeof wx.enableAlertBeforeUnload === 'function') {
+      try { wx.enableAlertBeforeUnload({ message: LEAVE_MESSAGE,
+        success: function () { if (self._visible && version === self._visibilityVersion) self.setData({ nativeLeavePrompt: true }) },
+        fail: function () { if (self._visible && version === self._visibilityVersion) self.setData({ nativeLeavePrompt: false }) }
+      }) } catch (_) { this.setData({ nativeLeavePrompt: false }) }
     }
+    var begin = function () {
+      if (!self._visible || version !== self._visibilityVersion) return
+      var identity = self.chatIdentity()
+      if (self._viewerIdentity !== identity) self.setData({ item: null, chatText: '', sending: false })
+      self._viewerIdentity = identity; self.setData({ role: self.resolveViewerRole() })
+      return self.loadItem().then(function () {
+        var selected = self._selectedImage
+        if (self._visible && selected && selected.identity === self.chatIdentity()) { self._selectedImage = null; return self.sendImage(selected.file) }
+      }).then(function () { self.schedulePolling() })
+    }
+    var ready = app && app.globalData && app.globalData.loginReady
+    return ready ? Promise.resolve(ready).then(begin, begin) : begin()
   },
-
+  stopPolling: function () { if (this._pollTimer) { clearTimeout(this._pollTimer); this._pollTimer = null } },
+  schedulePolling: function () {
+    var self = this; this.stopPolling()
+    if (this._visible) this._pollTimer = setTimeout(function () { self._pollTimer = null; if (self._visible) self.loadItem().then(function () { self.schedulePolling() }) }, 5000)
+  },
+  onHide: function () { this._visible = false; this._visibilityVersion = (this._visibilityVersion || 0) + 1; this._loadId = (this._loadId || 0) + 1; this._sendNonce = (this._sendNonce || 0) + 1; this.stopPolling(); if (!this._disposed) this.setData({ sending: false }); this.disableLeavePrompt() },
+  onUnload: function () { this._disposed = true; this._selectedImage = null; this.onHide() },
+  disableLeavePrompt: function () { if (typeof wx.disableAlertBeforeUnload === 'function') { try { wx.disableAlertBeforeUnload({}) } catch (_) {} } },
+  leaveChat: function () {
+    var self = this, identity = this.chatIdentity()
+    wx.showModal({ title: '离开聊天', content: LEAVE_MESSAGE, confirmText: '回首页', cancelText: '继续聊天', success: function (result) {
+      if (!result.confirm || !self._visible || identity !== self.chatIdentity()) return
+      self.disableLeavePrompt(); wx.switchTab({ url: '/pages/index/index', fail: function () { if (self._visible) self.onShow() } })
+    } })
+  },
   loadItem: function () {
-    var self = this
-    var id = self.data.id
-    if (!id) {
-      return
-    }
-    if (USE_BACKEND) {
-      var app = getApp()
-      var openid = (app && app.globalData && app.globalData.openid) || ''
-      var fetchItem = function () {
-        return openid
-          ? api.getMyAppointments(openid).then(function (resp) {
-              var list = (resp && resp.list) || []
-              return list.find(function (x) { return x.id === id }) || null
-            })
-          : Promise.resolve(null)
-      }
-      fetchItem()
-        .then(function (item) {
-          if (!item) {
-            return api.getAdminAppointments().then(function (resp) {
-              var all = (resp && resp.list) || []
-              return all.find(function (x) { return x.id === id }) || null
-            })
-          }
-          return item
-        })
-        .then(function (item) {
-          if (!item) return null
-          return api.getMessages(id).then(function (mr) {
-            item.messages = (mr && mr.list) || []
-            return item
-          })
-        })
-        .then(function (item) {
-          if (!item) {
-            var localItem = appointments.getById(id)
-            self.setData({ item: localItem })
-            return
-          }
-          var decorated = appointments.decorate ? appointments.decorate(item) : item
-          self.setData({ item: decorated })
-          if (decorated && decorated.messages && decorated.messages.length) {
-            var last = decorated.messages[decorated.messages.length - 1]
-            self.setData({ scrollIntoView: 'msg-' + last.id })
-          }
-        })
-        .catch(function (err) {
-          console.error('[chat] 加载失败:', err.message)
-          var localItem = appointments.getById(id)
-          self.setData({ item: localItem })
-        })
-      return
-    }
-    var item = appointments.getById(id)
-    this.setData({ item: item })
-    if (item && item.messages && item.messages.length) {
-      var last = item.messages[item.messages.length - 1]
-      this.setData({ scrollIntoView: 'msg-' + last.id })
-    }
+    var self = this, id = this.data.id
+    if (!this._visible || !id) return Promise.resolve()
+    var user = (getApp() && getApp().globalData) || {}, openid = user.openid || ''
+    var identity = this.chatIdentity(), version = this._visibilityVersion, loadId = (this._loadId || 0) + 1
+    this._loadId = loadId
+    var current = function () { return self._visible && version === self._visibilityVersion && loadId === self._loadId && identity === self.chatIdentity() }
+    this.setData({ role: this.resolveViewerRole(), loading: !this.data.item, loadError: '' })
+    var fetch = this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('请先登录')))
+    return fetch.then(function (response) {
+      if (!current()) return null
+      if (!response || !Array.isArray(response.list)) throw new Error('预约资料无法读取')
+      var item = response.list.find(function (record) { return String(record.id) === String(id) })
+      if (!item) throw new Error('未找到可查看的预约')
+      return api.getMessages(id).then(function (response) {
+        if (!response || !Array.isArray(response.list)) throw new Error('沟通记录无法读取')
+        return Object.assign({}, item, { messages: response.list })
+      })
+    }).then(function (item) {
+      if (!current() || !item) return
+      var decorated = appointments.decorate ? appointments.decorate(item) : item
+      decorated.messages = (decorated.messages || []).map(function (message) { return Object.assign({}, message, { viewerClass: message.from === self.data.role ? 'msg-own' : 'msg-other', fromText: message.from === 'admin' ? '社团成员' : (self.data.role === 'admin' ? '预约用户' : '我') }) })
+      var last = decorated.messages[decorated.messages.length - 1]
+      self.setData({ item: decorated, loading: false, loadError: '', scrollIntoView: last ? 'msg-' + last.id : '' }, function () {
+        if (current()) unread.markRead(openid, id, self.data.role, decorated.messages)
+      })
+    }).catch(function (error) { if (current()) self.setData({ loading: false, loadError: error.message || '聊天加载失败，请重试。' }) })
   },
-
-  onChatInput: function (event) {
-    this.setData({ chatText: event.detail.value })
-  },
-
+  onChatInput: function (event) { this.setData({ chatText: event.detail.value }) },
   sendMessage: function () {
-    var self = this
-    var text = String(this.data.chatText || '').trim()
-    if (!text) {
-      wx.showToast({ title: '请输入内容', icon: 'none' })
-      return
-    }
-    if (this.data.sending) {
-      return
-    }
-
+    var self = this, text = String(this.data.chatText || '').trim(), identity = this.chatIdentity()
+    if (!text) { wx.showToast({ title: '请输入内容', icon: 'none' }); return Promise.resolve() }
+    if (this._sendInFlight || this.data.sending || !this._visible || this._disposed || !this.data.item || !this.data.item.canReply) return Promise.resolve()
+    var version = this._visibilityVersion, nonce = (this._sendNonce || 0) + 1
+    this._sendNonce = nonce; this._sendInFlight = true
+    var current = function () { return self._visible && !self._disposed && self._visibilityVersion === version && self._sendNonce === nonce && identity === self.chatIdentity() }
     this.setData({ sending: true })
-
-    if (USE_BACKEND) {
-      api.sendMessage(self.data.id, self.data.role, text)
-        .then(function () {
-          self.setData({ sending: false, chatText: '' })
-          self.loadItem()
-        })
-        .catch(function (err) {
-          self.setData({ sending: false })
-          wx.showToast({ title: '发送失败:' + (err.message || err), icon: 'none' })
-        })
-      return
-    }
-
-    var changed = appointments.addMessage(self.data.id, self.data.role, text)
-    self.setData({ sending: false })
-
-    if (!changed) {
-      wx.showToast({ title: '发送失败，请重试', icon: 'none' })
-      return
-    }
-
-    self.setData({ chatText: '' })
-    self.loadItem()
+    return api.sendMessage(this.data.id, this.data.role, text).then(function () {
+      self._sendInFlight = false
+      if (!current()) return
+      self.setData({ sending: false, chatText: '' }); if (self._visible) return self.loadItem()
+    }).catch(function () { self._sendInFlight = false; if (current()) { self.setData({ sending: false }); wx.showToast({ title: '发送失败，请重试', icon: 'none' }) } })
   },
-
   chooseImage: function () {
-    var self = this
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: function (res) {
-        var filePath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath
-        if (!filePath) {
-          wx.showToast({ title: '未选择图片', icon: 'none' })
-          return
-        }
-        self.sendImage(filePath)
-      },
-      fail: function () {
-        wx.showToast({ title: '选择图片失败', icon: 'none' })
-      }
-    })
+    var self = this, identity = this.chatIdentity()
+    if (this._sendInFlight || this.data.sending || this._disposed || !this.data.item || !this.data.item.canReply) return
+    wx.chooseMedia({ count: 1, mediaType: ['image'], sourceType: ['album', 'camera'], success: function (result) {
+      if (self._disposed || identity !== self.chatIdentity()) return
+      var file = result.tempFiles && result.tempFiles[0] && result.tempFiles[0].tempFilePath
+      if (file) { if (self._visible) self.sendImage(file); else self._selectedImage = { file: file, identity: identity } }
+    }, fail: function () { if (self._visible) wx.showToast({ title: '未选择图片', icon: 'none' }) } })
   },
-
   sendImage: function (filePath) {
-    var self = this
-    if (this.data.sending) return
+    var self = this, identity = this.chatIdentity()
+    if (this._sendInFlight || this.data.sending || !this._visible || this._disposed || !this.data.item || !this.data.item.canReply) return Promise.resolve()
+    var version = this._visibilityVersion, nonce = (this._sendNonce || 0) + 1
+    this._sendNonce = nonce; this._sendInFlight = true
+    var current = function () { return self._visible && !self._disposed && self._visibilityVersion === version && self._sendNonce === nonce && identity === self.chatIdentity() }
     this.setData({ sending: true })
-
-    api.uploadImage(filePath)
-      .then(function (imageUrl) {
-        return api.sendImageMessage(self.data.id, self.data.role, imageUrl)
-      })
-      .then(function () {
-        self.setData({ sending: false })
-        self.loadItem()
-      })
-      .catch(function (err) {
-        self.setData({ sending: false })
-        wx.showToast({ title: '图片发送失败:' + (err.message || err), icon: 'none' })
-      })
+    return api.uploadImage(filePath).then(function (imageUrl) {
+      if (self._disposed || identity !== self.chatIdentity()) throw new Error('登录账号已改变')
+      return api.sendImageMessage(self.data.id, self.data.role, imageUrl)
+    }).then(function () { self._sendInFlight = false; if (current()) { self.setData({ sending: false }); return self.loadItem() } })
+      .catch(function () { self._sendInFlight = false; if (current()) { self.setData({ sending: false }); wx.showToast({ title: '图片发送失败，请重试', icon: 'none' }) } })
   },
-
-  previewImage: function (event) {
-    var url = event.currentTarget.dataset.url
-    if (!url) return
-    wx.previewImage({
-      urls: [url],
-      current: url
-    })
-  }
+  previewImage: function (event) { var url = event.currentTarget.dataset.url; if (url) wx.previewImage({ urls: [url], current: url }) }
 })

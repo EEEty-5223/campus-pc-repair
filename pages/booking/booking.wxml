@@ -2,6 +2,7 @@
   <view class="form-intro">
     <view class="form-intro-title">{{isEditing ? '修改预约信息' : '填写维修信息'}}</view>
     <view class="form-intro-desc">{{isEditing ? '只有预约中的预约可以修改' : '请尽量准确描述故障，方便社团成员提前判断'}}</view>
+    <view class="service-prefill-note" wx:if="{{servicePrefilled && !isEditing}}">已选择：{{faultTypes[faultIndex]}} · 可在下方调整类别</view>
   </view>
 
   <form bindsubmit="submitBooking">

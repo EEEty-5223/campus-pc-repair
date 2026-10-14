@@ -1,4 +1,6 @@
 <view class="page chat-page" wx:if="{{item}}">
+  <view class="chat-leave-note"><view>离开后收不到新消息推送，请回首页“快速沟通”查看未读。</view><button class="chat-leave-button" bindtap="leaveChat">离开聊天</button></view>
+  <view wx:if="{{loadError}}" class="chat-load-error">{{loadError}}<text bindtap="loadItem"> 点击重试</text></view>
   <view class="chat-summary card">
     <view class="chat-summary-row">
       <text class="chat-summary-label">预约编号</text>
@@ -21,7 +23,7 @@
         <view wx:if="{{!item.hasMessages}}" class="chat-empty">暂无消息，开始下面的对话吧。</view>
 
         <view
-          class="chat-msg {{msg.fromClass}}"
+          class="chat-msg {{msg.viewerClass}}"
           wx:for="{{item.messages}}"
           wx:for-item="msg"
           wx:key="id"
@@ -57,8 +59,9 @@
 </view>
 
 <view class="page" wx:else>
+  <view class="chat-leave-note"><view>离开后收不到新消息推送，请回首页查看未读。</view><button class="chat-leave-button" bindtap="leaveChat">离开聊天</button></view>
   <view class="card empty-state">
     <text class="empty-icon">🔎</text>
-    <text class="empty-title">未找到预约</text>
+    <text class="empty-title">{{loading ? '正在加载聊天…' : (loadError || '未找到预约')}}</text><button wx:if="{{!loading}}" class="chat-leave-button" bindtap="loadItem">重新加载</button>
   </view>
 </view>

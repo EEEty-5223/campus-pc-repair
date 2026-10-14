@@ -6,6 +6,7 @@
     </view>
   </view>
 
+  <view wx:if="{{loadError}}" class="card"><text>消息暂时无法更新，请重试。</text><button bindtap="loadItems">重新加载</button></view>
   <view wx:if="{{loading}}" class="card empty-state">
     <text class="empty-title">加载中…</text>
   </view>
@@ -15,14 +16,14 @@
       <view class="consult-row">
         <view class="consult-info">
           <view class="consult-top">
-            <text class="consult-device">{{item.deviceType}}</text>
+            <text class="consult-device">{{item.deviceType}}</text><text wx:if="{{item.unreadCount > 0}}" class="unread-badge">{{item.unreadText}}</text>
           </view>
           <view class="consult-fault">{{item.faultType}} · {{item.description}}</view>
           <view class="consult-meta">{{item.appointmentDate}} {{item.timeSlot}} · {{item.location}}</view>
         </view>
         <view class="consult-action">
           <text class="status-pill {{item.statusClass}}">{{item.statusText}}</text>
-          <button class="consult-button" data-id="{{item.id}}" bindtap="goChat">点击咨询</button>
+          <button class="consult-button" data-id="{{item.id}}" bindtap="goChat">{{item.canReply ? '点击咨询' : '查看消息'}}</button>
         </view>
       </view>
     </view>
@@ -31,7 +32,7 @@
   <view wx:else class="card empty-state">
     <text class="empty-icon">💬</text>
     <text class="empty-title">暂无可沟通的预约</text>
-    <text class="muted">已结束或已取消的预约不会显示在这里</text>
+    <text class="muted">进行中的预约和有未读消息的已结束预约会显示在这里</text>
     <button class="primary-button empty-button" bindtap="goBooking">预约电脑维修</button>
   </view>
 </view>

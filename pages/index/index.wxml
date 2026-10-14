@@ -1,29 +1,33 @@
 <view class="page home-page">
   <view class="hero">
     <view class="hero-badge">电脑e家社团服务</view>
-    <view class="hero-title">电脑出问题？<br />先预约，再处理</view>
-    <view class="hero-desc">面向校内同学的电脑检测与基础维修预约服务</view>
+    <view class="hero-title">电脑出问题？<br />先预约, 再处理</view>
+    <view class="hero-desc">面向校内师生的电脑检测与基础维修预约服务</view>
     <button class="hero-button" bindtap="goBooking">立即预约维修</button>
     <view class="hero-record" bindtap="goRecords">
-      已有 {{recordCount}} 条本机预约记录，点击查看 ›
+      <text wx:if="{{recordCountLoading}}">预约记录加载中 · 查看预约 ›</text>
+      <text wx:elif="{{recordCountError}}">预约记录暂未加载 · 查看预约 ›</text>
+      <text wx:else>已有 {{recordCount}} 条预约记录，点击查看 ›</text>
     </view>
+    <button class="record-retry" wx:if="{{recordCountError}}" bindtap="loadRecordCount" hover-class="record-retry-pressed">重新加载</button>
   </view>
 
   <view class="card consult-entry" bindtap="goConsult">
     <view class="consult-entry-main">
-      <view class="consult-entry-title">💬 快速沟通</view>
-      <view class="consult-entry-desc">有疑问？一键进入进行中的预约沟通</view>
+      <view class="consult-entry-title">💬 快速沟通 <text wx:if="{{unreadCount > 0}}" class="unread-badge">{{unreadText}}</text></view>
+      <view class="consult-entry-desc">{{unreadError ? '消息暂时无法更新，点击查看' : (unreadCount > 0 ? '有未读消息，点击查看' : '有疑问？一键进入进行中的预约沟通')}}</view>
     </view>
     <view class="consult-entry-arrow">›</view>
   </view>
 
   <view class="section-title">可预约服务</view>
   <view class="service-grid">
-    <view class="service-card" wx:for="{{services}}" wx:key="name">
+    <button class="service-card" wx:for="{{services}}" wx:key="id" data-service="{{item.id}}" bindtap="goServiceBooking" hover-class="service-card-pressed" hover-stay-time="100" aria-label="{{item.name}}，预约此服务">
       <view class="service-icon">{{item.icon}}</view>
       <view class="service-name">{{item.name}}</view>
       <view class="service-desc">{{item.desc}}</view>
-    </view>
+      <view class="service-action"><text>预约此服务</text><text class="service-arrow">›</text></view>
+    </button>
   </view>
 
   <view class="section-title">服务流程</view>
@@ -44,6 +48,6 @@
     <view class="notice-line">· 检测后如需购买配件，会先征得本人同意</view>
   </view>
 
-  <view class="admin-entry" bindtap="goAdmin" wx:if="{{isAdmin}}">社团成员演示后台 ›</view>
+  <view class="admin-entry" bindtap="goAdmin" wx:if="{{isAdmin}}">社团后台 ›</view>
   <view class="admin-entry apply-entry" bindtap="goApply" wx:if="{{!isAdmin}}">申请加入社团 ›</view>
 </view>

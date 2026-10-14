@@ -107,3 +107,5 @@
 .empty-button {
   margin-top: 36rpx;
 }
+
+.unread-badge { display: inline-block; min-width: 34rpx; height: 34rpx; margin-left: 12rpx; padding: 0 9rpx; border-radius: 18rpx; background: #ef4444; color: #fff; font-size: 22rpx; text-align: center; line-height: 34rpx; }
