@@ -5,6 +5,13 @@
     <view class="status-desc">提交于 {{item.createdAtText}}</view>
   </view>
   <view class="tip-card">提示：维修前请自行备份重要文件，不要在故障描述中填写账号或密码。</view>
+  <view wx:if="{{role === 'user' && (item.status === 'pending' || item.status === 'accepted' || item.status === 'repairing')}}" class="card completion-code-card">
+    <view class="detail-section-title">维修完成确认码</view>
+    <view wx:if="{{completionCode}}" class="completion-code">{{completionCode}}</view>
+    <view wx:elif="{{codeLoading}}" class="completion-note">正在加载确认码…</view>
+    <view wx:else class="completion-error">{{codeError || '确认码暂不可用'}}<button class="secondary-button" bindtap="loadCompletionCode">刷新确认码</button></view>
+    <view class="completion-note">请在维修完成并确认后，再将此码告知服务人员。完成预约后此码失效。</view>
+  </view>
 
   <view class="detail-actions">
     <button class="primary-button chat-cta" wx:if="{{role !== 'admin'}}" bindtap="goChat">点击与社团沟通</button>
@@ -63,6 +70,7 @@
 <view class="page" wx:else>
   <view class="card empty-state">
     <text class="empty-icon">🔎</text>
-    <text class="empty-title">未找到预约</text>
+    <text class="empty-title">{{loading ? '正在加载预约…' : (loadError || '未找到预约')}}</text>
+    <button wx:if="{{!loading}}" class="secondary-button" bindtap="loadItem">刷新预约</button>
   </view>
 </view>

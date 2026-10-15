@@ -55,7 +55,7 @@ function fixture(options = {}) {
     vm.runInNewContext(fs.readFileSync(path.join(root, relativePath), 'utf8'), {
       Page: value => { definition = value }, getApp: () => ({ globalData: user }), wx, Promise, console,
       setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
-      require: name => name.includes('chat-unread') ? { overview: () => Promise.resolve({ total: 0, counts: {}, items: [] }), markRead() {} } : name.includes('admin-notifications') ? { data: {}, methods: {} } : name.includes('member-session') ? session : name.includes('members') ? members : name.includes('api-request') ? api : {}
+      require: name => name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { overview: () => Promise.resolve({ total: 0, counts: {}, items: [] }), markRead() {} } : name.includes('admin-notifications') ? { data: {}, methods: {} } : name.includes('member-removal-ui') ? { canRemove: () => false, methods: { loadRemovalRequests: () => Promise.resolve() } } : name.includes('member-session') ? session : name.includes('members') ? members : name.includes('api-request') ? api : {}
     })
     const instance = Object.assign({}, definition, { data: clone(definition.data) })
     instance.setData = patch => Object.assign(instance.data, clone(patch))
@@ -132,6 +132,12 @@ async function main() {
   assert.strictEqual(racePage.data.loading, true)
   race.calls.deferred[1].resolve(); await second
   assert.strictEqual(racePage.data.loading, false)
+  const hidden = fixture({ deferLoad: true }), hiddenPage = hidden.page('pages/member-detail/member-detail.js')
+  hiddenPage.onLoad({ openid: 'self' })
+  const hiddenLoad = hiddenPage.loadDetail()
+  hiddenPage.onUnload()
+  hidden.calls.deferred[0].resolve(); await hiddenLoad
+  assert.strictEqual(hiddenPage.data.profile, null, 'unloaded detail response must not render a profile or start related requests')
   racePage.beginEdit(); racePage.onDraftInput(evt('nickname', '旧账号草稿'))
   race.user.openid = 'new-member'; race.user.notificationSession = 'new-session'; race.options.deferLoad = false
   await racePage.loadDetail()

@@ -9,6 +9,11 @@ Page({
     role: 'user',
     chatText: '',
     sending: false,
+    completionCode: '',
+    codeLoading: false,
+    codeError: '',
+    loading: false,
+    loadError: '',
     scrollIntoView: ''
   },
 
@@ -22,73 +27,53 @@ Page({
   onShow: function () {
     var self = this
     var app = getApp()
+    this._detailVisible = true
+    this._detailDisposed = false
+    var version = this._detailVersion = (this._detailVersion || 0) + 1
+    this.setData({ completionCode: '', codeError: '' })
+    function load() { if (self._detailVisible && version === self._detailVersion) return self.loadItem() }
     // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
     if (app && app.globalData && app.globalData.loginReady) {
       app.globalData.loginReady
-        .then(function () { self.loadItem() })
-        .catch(function () { self.loadItem() })
+        .then(load)
+        .catch(load)
     } else {
-      self.loadItem()
+      load()
     }
+  },
+  onHide: function () { this._detailVisible = false; this._detailVersion = (this._detailVersion || 0) + 1; this._itemLoad = (this._itemLoad || 0) + 1; this._codeLoad = (this._codeLoad || 0) + 1; if (!this._detailDisposed) this.setData({ completionCode: '' }) },
+  onUnload: function () { this._detailDisposed = true; this.onHide() },
+  detailIdentity: function () { var u = (getApp() && getApp().globalData) || {}; return [u.openid, u.notificationSession, this.data.id, this.data.role].join(':') },
+  loadCompletionCode: function () {
+    var self = this, item = this.data.item
+    if (this.data.role !== 'user' || !item || ['pending', 'accepted', 'repairing'].indexOf(item.status) === -1 || this._detailVisible === false) { this.setData({ completionCode: '', codeError: '', codeLoading: false }); return Promise.resolve() }
+    var who = this.detailIdentity(), version = this._codeLoad = (this._codeLoad || 0) + 1
+    function current() { return self._detailVisible !== false && who === self.detailIdentity() && version === self._codeLoad && self.data.item && ['pending', 'accepted', 'repairing'].indexOf(self.data.item.status) !== -1 }
+    this.setData({ completionCode: '', codeError: '', codeLoading: true })
+    return api.getCompletionCode(item.id).then(function (r) {
+      if (!current()) return
+      if (r && r.ended && ['completed', 'cancelled'].indexOf(r.status) !== -1) { var ended = Object.assign({}, self.data.item, { status: r.status }); self.setData({ item: appointments.decorate ? appointments.decorate(ended) : ended, completionCode: '', codeLoading: false }); return }
+      if (!r || !/^\d{4}$/.test(r.completionCode || '')) throw new Error('invalid completion code')
+      self.setData({ completionCode: r.completionCode })
+    }).catch(function () { if (current()) self.setData({ completionCode: '', codeError: '确认码暂时无法加载，请刷新重试。' }) }).then(function () { if (current()) self.setData({ codeLoading: false }) })
   },
 
   loadItem: function () {
-    var self = this
-    var id = self.data.id
-    if (USE_BACKEND) {
-      var app = getApp()
-      var openid = (app && app.globalData && app.globalData.openid) || ''
-      var fetchItem = function () {
-        return openid
-          ? api.getMyAppointments(openid).then(function (resp) {
-              var list = (resp && resp.list) || []
-              return list.find(function (x) { return x.id === id }) || null
-            })
-          : Promise.resolve(null)
-      }
-      fetchItem()
-        .then(function (item) {
-          if (!item) {
-            return api.getAdminAppointments().then(function (resp) {
-              var all = (resp && resp.list) || []
-              return all.find(function (x) { return x.id === id }) || null
-            })
-          }
-          return item
-        })
-        .then(function (item) {
-          if (!item) return null
-          return api.getMessages(id).then(function (mr) {
-            item.messages = (mr && mr.list) || []
-            return item
-          })
-        })
-        .then(function (item) {
-          if (!item) {
-            var localItem = appointments.getById(id)
-            self.setData({ item: localItem })
-            if (!localItem) {
-              wx.showToast({ title: '预约记录不存在', icon: 'none' })
-            }
-            return
-          }
-          var decorated = appointments.decorate ? appointments.decorate(item) : item
-          self.setData({ item: decorated })
-        })
-        .catch(function (err) {
-          console.error('[detail] 加载失败:', err.message)
-          var localItem = appointments.getById(id)
-          self.setData({ item: localItem })
-        })
-      return
-    }
-    var item = appointments.getById(id)
-    self.setData({ item: item })
-    if (!item) {
-      wx.showToast({ title: '预约记录不存在', icon: 'none' })
-    }
+    var self = this, id = this.data.id, who = this.detailIdentity(), version = this._itemLoad = (this._itemLoad || 0) + 1
+    var app = getApp(), openid = (app && app.globalData && app.globalData.openid) || ''
+    function current() { return self._detailVisible !== false && who === self.detailIdentity() && version === self._itemLoad }
+    this._codeLoad = (this._codeLoad || 0) + 1
+    this.setData({ item: null, completionCode: '', codeError: '', codeLoading: false, loading: true, loadError: '' })
+    var fetch = this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('login required')))
+    return fetch.then(function (r) {
+      if (!current()) return
+      if (!r || !Array.isArray(r.list)) throw new Error('invalid appointments')
+      var item = r.list.find(function (x) { return x.id === id })
+      if (!item) throw new Error('appointment missing')
+      self.setData({ item: appointments.decorate ? appointments.decorate(item) : item, loading: false })
+      return self.loadCompletionCode()
+    }).catch(function () { if (current()) self.setData({ item: null, completionCode: '', loading: false, loadError: '预约暂时无法加载，请刷新重试。' }) })
   },
-
   editBooking: function () {
     wx.navigateTo({
       url: '/pages/booking/booking?id=' + this.data.id
@@ -107,7 +92,7 @@ Page({
           return
         }
         if (USE_BACKEND) {
-          api.updateStatus(that.data.id, 'cancelled')
+          (that.data.role === 'admin' ? api.updateStatus(that.data.id, 'cancelled') : api.cancelOwnAppointment(that.data.id))
             .then(function () {
               that.loadItem()
               wx.showToast({ title: '已取消', icon: 'success' })

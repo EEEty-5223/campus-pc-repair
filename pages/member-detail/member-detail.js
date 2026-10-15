@@ -1,6 +1,7 @@
 var api = require('../../utils/api-request')
 var members = require('../../utils/members')
 var session = require('../../utils/member-session')
+var removal = require('../../utils/member-removal-ui')
 var STATUS = { pending: '待审核', approved: '已通过', rejected: '已拒绝', invalidated: '已失效' }
 function decorateRequest(request) {
   return request ? Object.assign({}, request, { statusText: STATUS[request.status] || request.status, changes: members.changes(request) }) : null
@@ -10,16 +11,20 @@ function requestKey() {
   while (key.length < 64) key += Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0')
   return key.slice(0, 64)
 }
-Page({
-  data: { profile: null, profileFields: [], roleText: '', loading: false, saving: false, editing: false, draft: {}, saveMode: 'request', departmentReadonly: false, pendingRequest: null, history: [], canReview: false, reviews: [], reviewsLoading: false, reviewBusy: false, error: '', reviewError: '', needsLogin: false },
-  onLoad: function (options) { this._targetOpenid = String((options && options.openid) || ''); this._reviewMode = !!(options && options.review === '1') },
-  onShow: function () { if (this._reviewMode) { this.resetForAccount(); this.setData({ canReview: true }); this.loadReviews() } else this.loadDetail() },
+Page(Object.assign({
+  data: { removalRequests: [], removalLoading: false, removalBusy: false, removalError: '', removalSuccess: '', removalMode: false, removalCanReview: false, canRemoveMember: false, removalDirect: false, profile: null, profileFields: [], roleText: '', loading: false, saving: false, editing: false, draft: {}, saveMode: 'request', departmentReadonly: false, pendingRequest: null, history: [], canReview: false, reviews: [], reviewsLoading: false, reviewBusy: false, error: '', reviewError: '', needsLogin: false },
+  onLoad: function (options) { this._targetOpenid = String((options && options.openid) || ''); this._reviewMode = !!(options && options.review === '1'); this._removalMode = !!(options && options.removals === '1') },
+  onShow: function () { this._removalEpoch = (this._removalEpoch || 0) + 1; this.setData({ removalBusy: false, saving: false, reviewBusy: false, removalMode: this._removalMode }); if (this._removalMode) { this.resetForAccount(); this.loadRemovalRequests() } else if (this._reviewMode) { this.resetForAccount(); this.setData({ canReview: true }); this.loadReviews() } else this.loadDetail() },
+  onHide: function () { this._removalEpoch = (this._removalEpoch || 0) + 1; this._loadId = (this._loadId || 0) + 1; this._reviewLoadId = (this._reviewLoadId || 0) + 1; this._saveId = (this._saveId || 0) + 1 },
+  onUnload: function () { this.onHide() },
 
   resetForAccount: function () {
     var user = (getApp() && getApp().globalData) || {}
     if (this._accountOpenid !== user.openid) {
       this._accountOpenid = user.openid
       this._submission = null
+      this._removalSubmission = null
+      this.setData({ removalRequests: [], removalSuccess: '', removalError: '', removalCanReview: false, canRemoveMember: false })
       this._reviewLoadId = (this._reviewLoadId || 0) + 1
       this._saveId = (this._saveId || 0) + 1
       this.setData({ profile: null, profileFields: [], draft: {}, editing: false, pendingRequest: null, history: [], reviews: [], canReview: false, saving: false, reviewBusy: false, reviewsLoading: false })
@@ -27,7 +32,7 @@ Page({
     if (this._viewer !== session.key()) { this._viewer = session.key(); this._saveId = (this._saveId || 0) + 1; this._reviewLoadId = (this._reviewLoadId || 0) + 1; this.setData({ saving: false, reviews: [], canReview: false, reviewBusy: false, reviewsLoading: false }) }
   },
 
-  refreshDetail: function () { if (this._reviewMode) { this.setData({ canReview: true }); return this.loadReviews() } return this.loadDetail() },
+  refreshDetail: function () { if (this._removalMode) return this.loadRemovalRequests(); if (this._reviewMode) { this.setData({ canReview: true }); return this.loadReviews() } return this.loadDetail() },
 
   loadDetail: function () {
     var self = this
@@ -41,6 +46,8 @@ Page({
       if (!current()) return
       if (!response || !response.profile || typeof response.profile.openid !== 'string') throw new Error('invalid profile')
       self.applyProfile(response.profile)
+      var currentUser = (getApp() && getApp().globalData) || {}
+      if (['admin', 'leader'].indexOf(currentUser.role) !== -1) self.loadRemovalRequests()
       self.setData({ pendingRequest: decorateRequest(response.pendingRequest), canReview: Object.prototype.hasOwnProperty.call(response, 'canReview') ? !!response.canReview : !!response.profile.canReview })
       if (!self.data.editing) self.setData({ draft: members.draft(response.profile) })
       if (response.profile.isSelf && response.profile.canEdit) {
@@ -68,6 +75,7 @@ Page({
       if (app && app.globalData) { app.globalData.department = profile.department || ''; app.globalData.role = profile.role; app.globalData.isAdmin = ['admin', 'leader', 'member'].indexOf(profile.role) !== -1; app.globalData.adminProfile = Object.assign({}, profile) }
     }
     var user = (getApp() && getApp().globalData) || {}
+    this.setData({ canRemoveMember: removal.canRemove(user, profile), removalDirect: user.role === 'admin' })
     this.setData({ departmentReadonly: !!(profile.canEdit && !profile.isSelf && user.role === 'leader') })
     this.updateSaveMode()
   },
@@ -144,7 +152,7 @@ Page({
     var self = this
     if (this.data.saving || this.data.loading) return Promise.resolve()
     this.setData({ loading: true })
-    return session.renew().then(function () { if (self._reviewMode) { self.resetForAccount(); self.setData({ loading: false, canReview: true }); return self.loadReviews() } return self.loadDetail() }).catch(function () { self.resetForAccount(); self.setData({ loading: false, needsLogin: true, error: '登录未完成，请在手机微信中重新登录。' }) })
+    return session.renew().then(function () { if (self._removalMode) { self.resetForAccount(); self.setData({ loading: false, needsLogin: false, error: '' }); return self.loadRemovalRequests() } if (self._reviewMode) { self.resetForAccount(); self.setData({ loading: false, canReview: true }); return self.loadReviews() } return self.loadDetail() }).catch(function () { self.resetForAccount(); self.setData({ loading: false, needsLogin: true, error: '登录未完成，请在手机微信中重新登录。' }) })
   },
 
   loadReviews: function () {
@@ -186,4 +194,4 @@ Page({
       }
     })
   }
-})
+}, removal.methods))

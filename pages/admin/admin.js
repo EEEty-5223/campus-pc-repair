@@ -4,6 +4,8 @@ var chatUnread = require('../../utils/chat-unread')
 var notifications = require('../../utils/admin-notifications')
 var memberDirectory = require('../../utils/members')
 var memberSession = require('../../utils/member-session')
+var statusUI = require('../../utils/appointment-status-ui')
+var assignmentUI = require('../../utils/assignment-ui')
 var USE_BACKEND = true
 
 function copyMember(member) { return JSON.parse(JSON.stringify(member)) }
@@ -28,7 +30,7 @@ function validOwnProfile(profile) {
   return !!profile && !Array.isArray(profile) && profile.role === 'admin' && ['name', 'nickname', 'contact', 'department', 'displayTag'].every(function (field) { return typeof profile[field] === 'string' })
 }
 
-Page(Object.assign({
+Page(assignmentUI.withPage(Object.assign({
   data: Object.assign({}, notifications.data, {
     activeTab: 'appointments',
     role: '',
@@ -122,6 +124,7 @@ Page(Object.assign({
     var self = this
     var app = getApp()
     this._chatVisible = true
+    this.setData({ statusBusy: !!this._statusBusy })
     var version = (this._chatVisibilityVersion || 0) + 1
     this._chatVisibilityVersion = version
     var refresh = function () {
@@ -409,6 +412,9 @@ Page(Object.assign({
     if (this.data.role !== 'admin' && this.data.role !== 'leader') return
     wx.navigateTo({ url: '/pages/member-detail/member-detail?review=1' })
   },
+  goRemovalRequests: function () {
+    if (['admin', 'leader'].indexOf(this.data.role) !== -1) wx.navigateTo({ url: '/pages/member-detail/member-detail?removals=1' })
+  },
 
   reloginMembers: function () {
     var self = this
@@ -555,54 +561,7 @@ Page(Object.assign({
       })
   },
 
-  changeStatus: function (event) {
-    var id = event.currentTarget.dataset.id
-    var status = event.currentTarget.dataset.status
-    var label = appointments.STATUS_LABELS[status]
-    var that = this
-
-    wx.showModal({
-      title: '更新处理状态',
-      content: '确定将预约状态改为“' + label + '”吗？',
-      success: function (result) {
-        if (!result.confirm) {
-          return
-        }
-        if (USE_BACKEND) {
-          api.updateStatus(id, status)
-            .then(function () {
-              that.loadItems()
-              wx.showToast({
-                title: '状态已更新',
-                icon: 'success'
-              })
-            })
-            .catch(function (err) {
-              wx.showToast({
-                title: '更新失败:' + (err.message || err),
-                icon: 'none'
-              })
-              that.loadItems()
-            })
-          return
-        }
-        var changed = appointments.updateStatus(id, status)
-        if (!changed) {
-          wx.showToast({
-            title: '不允许这样变更状态',
-            icon: 'none'
-          })
-          that.loadItems()
-          return
-        }
-        that.loadItems()
-        wx.showToast({
-          title: '状态已更新',
-          icon: 'success'
-        })
-      }
-    })
-  },
+  changeStatus: function (event) { return statusUI.changeStatus.call(this, event) },
 
   goDetail: function (event) {
     wx.navigateTo({
@@ -681,4 +640,4 @@ Page(Object.assign({
       icon: 'success'
     })
   }
-}, notifications.methods))
+}, notifications.methods)))

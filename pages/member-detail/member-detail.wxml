@@ -1,13 +1,35 @@
 <view class="page member-detail-page">
+  <view wx:if="{{removalSuccess}}" class="card removal-success">{{removalSuccess}}</view>
   <view wx:if="{{loading}}" class="loading-note">正在加载成员资料…</view>
   <view wx:if="{{error}}" class="card error-note"><view>{{error}}</view><button wx:if="{{needsLogin}}" class="action-button" disabled="{{loading || saving}}" bindtap="relogin">重新微信登录</button><button wx:else class="action-button secondary" disabled="{{loading || saving}}" bindtap="refreshDetail">刷新资料</button></view>
   <view wx:if="{{profile}}" class="card">
     <view class="detail-title"><text class="role-badge role-{{profile.role}}">{{roleText}}</text><text>{{profile.name || profile.nickname || '未填写姓名'}}</text><text wx:if="{{profile.isSelf}}" class="self-tag">我</text></view>
     <view wx:for="{{profileFields}}" wx:key="key" class="info-row"><text class="field-label">{{item.label}}</text><text class="field-value">{{item.value}}</text></view>
+    <view class="info-row"><text class="field-label">手机号</text><text class="field-value">{{profile.phone || '未填写'}}</text></view>
     <view class="readonly-note">角色：{{roleText}}（只读）</view>
     <view wx:if="{{profile.tag === 'permanent'}}" class="readonly-note">入社标记：永久邀请码（只读）</view>
     <button wx:if="{{profile.canEdit && !editing && (profile.editMode === 'direct' || !pendingRequest) && !needsLogin}}" class="action-button" bindtap="beginEdit">{{profile.editMode === 'direct' ? (profile.isSelf ? '修改我的资料' : '修改成员资料') : '申请修改我的资料'}}</button>
     <view wx:if="{{!profile.canEdit}}" class="readonly-note">此处展示已生效资料，当前账号不能直接修改该成员。</view>
+  </view>
+  <view wx:if="{{canRemoveMember && profile && !editing && !error}}" class="card removal-panel">
+    <view class="section-heading">成员资格管理</view>
+    <view class="readonly-note">{{removalDirect ? '移出后立即停用社团权限，历史维修及聊天记录保留。有未完成任务时请先转交。' : '仅可申请移出本部门普通成员，由管理员审核后生效。'}}</view>
+    <button class="action-button removal-danger" disabled="{{removalBusy || saving || loading}}" bindtap="beginRemove">{{removalDirect ? '移出社团' : '申请移出社团'}}</button>
+  </view>
+  <view wx:if="{{removalMode || removalRequests.length || removalError}}" class="card">
+    <view class="review-heading"><view class="section-heading">成员移出申请</view><button class="small-button" disabled="{{removalLoading || removalBusy}}" bindtap="loadRemovalRequests">刷新</button></view>
+    <view wx:if="{{removalError}}" class="error-note">{{removalError}}</view>
+    <view wx:if="{{removalLoading}}" class="readonly-note">正在加载移出申请…</view>
+    <view wx:for="{{removalRequests}}" wx:key="id" class="review-request">
+      <view class="review-name">{{item.targetName || '社团成员'}} · {{item.statusText}}</view>
+      <view class="readonly-note">部门：{{item.targetDepartment || '未填写'}} · 申请人：{{item.requesterName || '社团负责人'}}</view>
+      <view class="removal-reason">移出原因：{{item.reason}}</view>
+      <view wx:if="{{item.reviewReason}}" class="readonly-note">审核说明：{{item.reviewReason}}</view>
+      <view class="readonly-note">申请时间：{{item.createdAt}}</view>
+      <view wx:if="{{removalCanReview && item.status === 'pending'}}" class="action-row"><button class="action-button removal-danger" disabled="{{removalBusy}}" data-id="{{item.id}}" data-decision="approve" bindtap="reviewRemoval">同意移出</button><button class="action-button secondary" disabled="{{removalBusy}}" data-id="{{item.id}}" data-decision="reject" bindtap="reviewRemoval">拒绝申请</button></view>
+    </view>
+    <view wx:if="{{!removalRequests.length && !removalLoading && !removalError}}" class="readonly-note">暂无成员移出申请。</view>
+    <button wx:if="{{removalHasMore}}" class="action-button secondary" disabled="{{removalLoading || removalBusy}}" bindtap="loadMoreRemovals">加载更多申请</button>
   </view>
   <view wx:if="{{editing}}" class="card">
     <view class="section-heading">{{saveMode === 'direct' ? '修改成员资料' : '申请修改资料'}}</view><view class="readonly-note">{{saveMode === 'direct' ? '保存后资料生效，修改记录保存在后台。' : '提交后资料保持原样，审核通过后才会更新。'}}</view>

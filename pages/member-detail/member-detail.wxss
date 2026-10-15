@@ -14,3 +14,8 @@
 .change-row,.history-row,.review-request { padding:18rpx 0;border-bottom:1rpx solid #e8edf5; }.change-row:last-child,.review-request:last-child,.history-row:last-child{border-bottom:none;}
 .before-value { color:#64748b;font-size:24rpx;line-height:1.7;overflow-wrap:anywhere; }.after-value { color:#1d4ed8;font-size:25rpx;line-height:1.7;overflow-wrap:anywhere; }.history-row{font-size:24rpx;color:#475569;}
 .review-heading { display:flex;justify-content:space-between;align-items:center;gap:16rpx; }.small-button{margin:0;padding:0 20rpx;background:#eff6ff;color:#2563eb;line-height:56rpx;font-size:23rpx;}.review-name{font-size:27rpx;font-weight:600;color:#334155;}
+
+.removal-panel { border-color: #fecaca; }
+.removal-danger { color: #b42318; background: #fff1f0; border: 1rpx solid #fecaca; }
+.removal-reason { margin: 16rpx 0; line-height: 1.65; word-break: break-all; }
+.removal-success { color: #166534; background: #f0fdf4; }

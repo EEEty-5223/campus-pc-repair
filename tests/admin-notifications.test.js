@@ -64,7 +64,7 @@ function fixture(options = {}) {
   vm.runInNewContext(source, { module, require: () => api, wx, getApp: () => app, Promise, Date })
   vm.runInNewContext(pageSource, {
     Page: value => { definition = value },
-    require: name => name.includes('chat-unread') ? { markRead() {} } : name.includes('admin-notifications') ? module.exports : name.includes('api-request') ? api : {
+    require: name => name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { markRead() {} } : name.includes('admin-notifications') ? module.exports : name.includes('api-request') ? api : {
       decorate: x => x, list: () => { throw new Error('Must not show stale demo data after API error') }
     },
     getApp: () => app, wx, console: { error() {} }, Promise, setTimeout: () => 1, clearTimeout() {}

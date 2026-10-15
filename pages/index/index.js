@@ -40,6 +40,7 @@ Page({
       // 登录完成后同步管理员状态
       var isAdmin = !!(app && app.globalData && app.globalData.isAdmin)
       self.setData({ isAdmin: isAdmin })
+      if (typeof app.checkMemberPhone === 'function') app.checkMemberPhone()
       self.loadRecordCount()
       self.refreshUnread()
       self._unreadTimer = setInterval(function () { self.refreshUnread() }, 10000)

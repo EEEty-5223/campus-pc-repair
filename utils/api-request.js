@@ -45,6 +45,10 @@ function normalizeAppointment(row) {
     status: row.status,
     assignedDepartment: row.assigned_department,
     assignedOpenid: row.assigned_openid,
+    assistantOpenids: row.assistantOpenids || row.assistant_openids || [],
+    assignedNames: row.assignedNames || row.assigneeNames || [],
+    assignees: row.assignees || [],
+    assignedActiveCount: row.assignedActiveCount === undefined ? (row.assigned_openid ? 1 : 0) : row.assignedActiveCount,
     createdAt: createdAt,
     createdAtText: formatDateTime(createdAt),
     updatedAt: updatedAt
@@ -209,11 +213,16 @@ module.exports = {
       return resp
     })
   },
-  updateStatus: function (id, status) {
-    return request('/api/appointments/status', 'POST', {
-      id: id,
-      status: status
-    })
+  updateStatus: function (id, status, completionCode) {
+    var body = { id: id, status: status }
+    if (typeof completionCode === 'string') body.completionCode = completionCode
+    return notificationRequest('', 'POST', body, false, false, '/api/appointments/status')
+  },
+  getCompletionCode: function (id) {
+    return notificationRequest('', 'GET', {}, false, false, '/api/appointments/' + encodeURIComponent(id) + '/completion-code')
+  },
+  cancelOwnAppointment: function (id) {
+    return notificationRequest('', 'POST', {}, false, false, '/api/appointments/' + encodeURIComponent(id) + '/cancel')
   },
   // 修改预约内容(仅待确认可改)
   updateAppointment: function (id, data) {
@@ -313,16 +322,32 @@ module.exports = {
     })
   },
   // 成员管理
+  getMyMemberPhone: function () {
+    return notificationRequest('', 'GET', {}, false, false, '/api/member/phone/me')
+  },
+  saveMyMemberPhone: function (phone, requestKey) {
+    return notificationRequest('', 'PUT', { phone: phone, requestKey: requestKey }, false, false, '/api/member/phone/me')
+  },
+  removeMember: function (openid, body) {
+    return notificationRequest('', 'POST', body, false, false, '/api/members/' + encodeURIComponent(openid) + '/removal')
+  },
+  getRemovalRequests: function (page) {
+    return notificationRequest('', 'GET', {}, false, false, '/api/member/removal-requests' + (page > 1 ? '?page=' + encodeURIComponent(page) : ''))
+  },
+  reviewRemovalRequest: function (id, decision, reason) {
+    return notificationRequest('', 'POST', { decision: decision, reason: reason || '' }, false, false, '/api/member/removal-requests/' + encodeURIComponent(id) + '/review')
+  },
   getMembers: function () {
     return request('/api/admin/whitelist', 'GET')
   },
   // 分配预约
-  assignAppointment: function (id, assignedDepartment, assignedOpenid) {
-    return request('/api/appointments/assign', 'POST', {
+  assignAppointment: function (id, assignedDepartment, assignedOpenid, assistantOpenids) {
+    return notificationRequest('', 'POST', {
       id: id,
       assignedDepartment: assignedDepartment,
-      assignedOpenid: assignedOpenid
-    })
+      assignedOpenid: assignedOpenid,
+      assistantOpenids: assistantOpenids || []
+    }, false, false, '/api/appointments/assign')
   }
 
 }

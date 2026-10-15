@@ -1,8 +1,16 @@
 // app.js
 const api = require('./utils/api-request.js')
 const appointments = require('./utils/appointments')
+const memberPhone = require('./utils/member-phone-prompt')
 
 App({
+  onShow: function () { this._phoneVisible = true; this.checkMemberPhone() },
+  onHide: function () { this._phoneVisible = false; memberPhone.cancel() },
+  checkMemberPhone: function () {
+    var self = this
+    if (this._phoneVisible !== true) return Promise.resolve()
+    return Promise.resolve(this.globalData.loginReady).then(function () { if (self._phoneVisible) return memberPhone.ensure(self) }).catch(function () {})
+  },
   onLaunch: function () {
     // 静默登录:wx.login() → 后端换 openid → 存到 globalData
     // 把登录过程暴露成 promise,方便各页面等待登录完成后再拉数据
@@ -13,6 +21,8 @@ App({
         self.globalData.isAdmin = data.isAdmin || false
         self.globalData.role = data.role || 'user'
         self.globalData.department = data.department || ''
+        self.globalData.phone = data.phone || ''
+        self.globalData.needsPhone = !!data.needsPhone
         self.globalData.notificationSession = data._simulator ? '' : (data.notificationSession || '')
         self.globalData.notificationSessionExpiresAt = data.notificationSessionExpiresAt || ''
         self.globalData.isSimulator = !!data._simulator

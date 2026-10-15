@@ -293,3 +293,8 @@
   margin: 0;
   margin-bottom: 32rpx;
 }
+
+.completion-code-card { text-align:center; background:#eff6ff; border-color:#bfdbfe; }
+.completion-code { margin:20rpx 0; color:#1d4ed8; font-size:72rpx; font-weight:700; letter-spacing:18rpx; font-variant-numeric:tabular-nums; }
+.completion-note { color:#64748b; font-size:24rpx; line-height:1.7; }
+.completion-error { color:#b42318; font-size:24rpx; line-height:1.7; }
