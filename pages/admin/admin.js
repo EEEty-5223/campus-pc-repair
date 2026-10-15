@@ -6,6 +6,7 @@ var memberDirectory = require('../../utils/members')
 var memberSession = require('../../utils/member-session')
 var statusUI = require('../../utils/appointment-status-ui')
 var assignmentUI = require('../../utils/assignment-ui')
+var adminActions = require('../../utils/appointment-admin-actions')
 var USE_BACKEND = true
 
 function copyMember(member) { return JSON.parse(JSON.stringify(member)) }
@@ -34,6 +35,8 @@ Page(assignmentUI.withPage(Object.assign({
   data: Object.assign({}, notifications.data, {
     activeTab: 'appointments',
     role: '',
+    isRealAdmin: false,
+    adminActionBusy: false,
     allItems: [],
     items: [],
     currentFilter: 'all',
@@ -63,6 +66,7 @@ Page(assignmentUI.withPage(Object.assign({
         label: '已完成',
         count: 0
       },
+      { value: 'voided', label: '已作废', count: 0 },
       {
         value: 'cancelled',
         label: '已取消',
@@ -132,6 +136,8 @@ Page(assignmentUI.withPage(Object.assign({
       // 登录完成后再同步角色，首次进入也能显示正确的操作入口。
       self.setData({
         role: (app && app.globalData && app.globalData.role) || '',
+        isRealAdmin: !!(app && app.globalData && app.globalData.role === 'admin' && app.globalData.notificationSession && !app.globalData.isSimulator),
+        adminActionBusy: !!self._adminActionBusy,
         myDepartment: (app && app.globalData && app.globalData.department) || ''
       })
       self.loadItems().then(function () { self.scheduleChatPolling() })
@@ -180,14 +186,19 @@ Page(assignmentUI.withPage(Object.assign({
       if (!current()) return
       var allItems = list.map(function (item) {
         var decorated = appointments.decorate ? appointments.decorate(item) : item
-        if (decorated.latestMessage) decorated.latestMessage = Object.assign({}, decorated.latestMessage, { viewerClass: decorated.latestMessage.from === 'admin' ? 'reply-own' : 'reply-other', fromText: decorated.latestMessage.from === 'admin' ? '社团成员' : '预约用户' })
+        if (decorated.latestMessage) {
+          var message = decorated.latestMessage, viewer = (getApp() && getApp().globalData) || {}
+          var own = message.senderOpenid ? message.senderOpenid === viewer.openid : message.from === 'admin'
+          var notice = message.kind === 'assignment_notice' || message.kind === 'admin_notice'
+          decorated.latestMessage = Object.assign({}, message, { viewerClass: !notice && own ? 'reply-own' : 'reply-other', fromText: message.kind === 'assignment_notice' ? '人员分配通知' : (message.kind === 'admin_notice' ? '社团负责人' : (message.senderName || (message.from === 'admin' ? '社团成员' : '预约用户'))) })
+        }
         return decorated
       })
       var filters = self.data.filters.map(function (filter) {
         var count = filter.value === 'all' ?
-          allItems.length :
+          allItems.filter(function (item) { return !item.isVoided }).length :
           allItems.filter(function (item) {
-            return item.status === filter.value
+            return filter.value === 'voided' ? item.isVoided : !item.isVoided && item.status === filter.value
           }).length
         return Object.assign({}, filter, {
           count: count
@@ -198,32 +209,36 @@ Page(assignmentUI.withPage(Object.assign({
         allItems: allItems,
         filters: filters,
         stats: {
-          total: allItems.length,
+          total: allItems.filter(function (item) { return !item.isVoided }).length,
           active: allItems.filter(function (item) {
-            return item.status === 'accepted' || item.status === 'repairing'
+            return !item.isVoided && (item.status === 'accepted' || item.status === 'repairing')
           }).length,
           completed: allItems.filter(function (item) {
-            return item.status === 'completed'
+            return !item.isVoided && item.status === 'completed'
           }).length
         }
       })
       self.applyFilter()
     }
     if (USE_BACKEND) {
-      return api.getAdminAppointments()
+      return api.getAdminAppointments(self.data.isRealAdmin)
         .then(function (resp) {
           var list = (resp && resp.list) || []
           // 补每条预约的消息
           var msgPromises = list.map(function (item) {
+            if (item.canChat === false) { item.messages = []; item.canReply = false; return Promise.resolve(item) }
             return api.getMessages(item.id).then(function (mr) {
               if (!mr || !Array.isArray(mr.list)) throw new Error('消息无法读取')
               item.messages = mr.list
+              if (mr.canReply !== undefined) item.canReply = mr.canReply
+              if (mr.isVoided !== undefined) item.isVoided = mr.isVoided
               item._messagesFailed = false
               return item
             }).catch(function () {
               var previous = self.data.allItems.find(function (old) { return old.id === item.id })
               item.messages = previous ? (previous.messages || []) : []
               item._messagesFailed = true
+              item.canReply = false
               return item
             })
           })
@@ -254,9 +269,9 @@ Page(assignmentUI.withPage(Object.assign({
     this._previewRenderId = renderId
     var status = this.data.currentFilter
     var items = status === 'all' ?
-      this.data.allItems :
+      this.data.allItems.filter(function (item) { return !item.isVoided }) :
       this.data.allItems.filter(function (item) {
-        return item.status === status
+        return status === 'voided' ? item.isVoided : !item.isVoided && item.status === status
       })
     this.setData({ items: items }, function () {
       if (!self._chatVisible || self.data.itemsLoading || self.data.activeTab !== 'appointments' || self.data.currentFilter !== status || renderId !== self._previewRenderId || identity !== self.chatViewerIdentity()) return
@@ -561,6 +576,10 @@ Page(assignmentUI.withPage(Object.assign({
       })
   },
 
+  forceStatus: adminActions.forceStatus,
+  forceComplete: adminActions.forceComplete,
+  voidAppointment: adminActions.voidAppointment,
+  restoreAppointment: adminActions.restoreAppointment,
   changeStatus: function (event) { return statusUI.changeStatus.call(this, event) },
 
   goDetail: function (event) {
@@ -570,6 +589,8 @@ Page(assignmentUI.withPage(Object.assign({
   },
 
   goChat: function (event) {
+    var item = this.data.allItems.find(function (x) { return x.id === event.currentTarget.dataset.id })
+    if (item && item.canChat === false) return
     wx.navigateTo({
       url: '/pages/chat/chat?id=' + event.currentTarget.dataset.id + '&role=admin'
     })
@@ -587,6 +608,9 @@ Page(assignmentUI.withPage(Object.assign({
 
   submitReply: function (event) {
     var id = event.currentTarget.dataset.id
+    var item = this.data.allItems.find(function (x) { return x.id === id })
+    if (!this._chatVisible || !item || !item.canReply || this._replyBusy) return
+    var identity = this.chatViewerIdentity(), version = this._chatVisibilityVersion
     var text = String(this.data.draftReplies[id] || '').trim()
     if (!text) {
       wx.showToast({
@@ -596,10 +620,13 @@ Page(assignmentUI.withPage(Object.assign({
       return
     }
     var that = this
+    function current() { return that._chatVisible && identity === that.chatViewerIdentity() && version === that._chatVisibilityVersion }
 
     if (USE_BACKEND) {
+      this._replyBusy = true
       api.sendMessage(id, 'admin', text)
         .then(function () {
+          if (!current()) return
           var drafts = Object.assign({}, that.data.draftReplies)
           drafts[id] = ''
           that.setData({
@@ -612,11 +639,13 @@ Page(assignmentUI.withPage(Object.assign({
           })
         })
         .catch(function (err) {
+          if (!current()) return
+          that.loadItems()
           wx.showToast({
             title: '回复失败:' + (err.message || err),
             icon: 'none'
           })
-        })
+        }).then(function () { that._replyBusy = false })
       return
     }
 

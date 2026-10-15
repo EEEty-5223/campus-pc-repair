@@ -42,10 +42,10 @@ function writeAll(items) {
 
 function decorate(item) {
   var copy = Object.assign({}, item)
-  copy.statusText = STATUS_LABELS[copy.status] || '未知状态'
-  copy.statusClass = 'status-' + copy.status
-  copy.canEdit = copy.status === 'pending'
-  copy.canCancel = copy.status === 'pending'
+  copy.statusText = copy.isVoided ? '已作废' : (STATUS_LABELS[copy.status] || '未知状态')
+  copy.statusClass = 'status-' + (copy.isVoided ? 'cancelled' : copy.status)
+  copy.canEdit = !copy.isVoided && copy.status === 'pending'
+  copy.canCancel = !copy.isVoided && copy.status === 'pending'
   copy.messages = normalizeMessages(copy).map(function (msg) {
     var isAdmin = msg.from === 'admin'
     return Object.assign({}, msg, {
@@ -59,7 +59,7 @@ function decorate(item) {
   copy.latestMessage = copy.messages.length
     ? copy.messages[copy.messages.length - 1]
     : null
-  copy.canReply = copy.status !== 'cancelled' && copy.status !== 'completed'
+  copy.canReply = copy.canChat !== false && !copy.isVoided && copy.canReply !== false && copy.status !== 'cancelled' && copy.status !== 'completed'
   copy.history = getHistory(copy).map(function (entry) {
     return Object.assign({}, entry, {
       statusText: STATUS_LABELS[entry.status] || '未知状态',

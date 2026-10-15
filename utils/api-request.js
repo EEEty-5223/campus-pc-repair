@@ -1,20 +1,15 @@
 // utils/api-request.js
 // 后端 API 封装:wx.login() → 发 /api/login → 拿到真实 openid
 
-// 开发版连接本机局域网；体验版、正式版保持线上服务。
+// 真机预览、体验版和正式版统一连接线上服务，可使用手机流量。
 const PRODUCTION_BASE_URL = 'https://campusapi.keon5223.xyz'
-const LOCAL_BASE_URL = 'http://10.222.65.216:3000'
 // 仅本机开发工具启用独立普通成员，真机和发布版本使用微信登录。
 const LOCAL_DEV_MEMBER = true
 function useLocalMember() {
   try { return LOCAL_DEV_MEMBER && wx.getAccountInfoSync().miniProgram.envVersion === 'develop' && wx.getSystemInfoSync().platform === 'devtools' } catch (_) { return false }
 }
 function resolveBaseUrl() {
-  try {
-    const info = wx.getAccountInfoSync()
-    return info && info.miniProgram && info.miniProgram.envVersion === 'develop'
-      ? (useLocalMember() ? 'http://127.0.0.1:3000' : LOCAL_BASE_URL) : PRODUCTION_BASE_URL
-  } catch (_) { return PRODUCTION_BASE_URL }
+  return useLocalMember() ? 'http://127.0.0.1:3000' : PRODUCTION_BASE_URL
 }
 const BASE_URL = resolveBaseUrl()
 // 时间戳转显示文本(和 utils/appointments.js 保持一致)
@@ -43,6 +38,11 @@ function normalizeAppointment(row) {
     appointmentDate: row.appointment_date,
     timeSlot: row.time_slot,
     status: row.status,
+    isVoided: !!row.isVoided,
+    voidReason: row.voidReason || '',
+    voidedAt: row.voidedAt || '',
+    canChat: row.canChat,
+    canReply: row.canReply,
     assignedDepartment: row.assigned_department,
     assignedOpenid: row.assigned_openid,
     assistantOpenids: row.assistantOpenids || row.assistant_openids || [],
@@ -61,7 +61,11 @@ function normalizeMessage(row) {
   var at = row.created_at ? Date.parse(row.created_at) : Date.now()
   return {
     id: String(row.id),
-    from: row.from_role,
+    from: row.from_role || row.from,
+    senderOpenid: row.senderOpenid || '',
+    senderName: row.senderName || '',
+    kind: ['assignment_notice', 'admin_notice'].indexOf(row.kind) !== -1 ? row.kind : 'normal',
+    assignmentPeople: Array.isArray(row.assignmentPeople) ? row.assignmentPeople : [],
     type: row.type || 'text',
     content: row.content || '',
     imageUrl: row.image_url || '',
@@ -129,7 +133,7 @@ function request(path, method, data) {
           if (r.data.ok) {
             resolve(r.data)
           } else {
-            reject(new Error(r.data.error || '请求失败'))
+            reject(Object.assign(new Error(r.data.error || '请求失败'), { code: r.data.code, statusCode: r.statusCode }))
           }
         } else {
           resolve(r.data)
@@ -206,8 +210,19 @@ module.exports = {
     })
   },
   // 返回的 list 已经是驼峰字段
-  getAdminAppointments: function () {
-    return request('/api/admin/appointments', 'GET').then(function (resp) {
+  getAppointment: function (id) {
+    return notificationRequest('', 'GET', {}, false, false, '/api/appointments/' + encodeURIComponent(id)).then(function (r) {
+      var item = normalizeAppointment(r.item || r.appointment)
+      if (item && r.canChat !== undefined) item.canChat = r.canChat
+      if (item && r.canReply !== undefined) item.canReply = r.canReply
+      return { ok: true, item: item }
+    })
+  },
+  forceAppointmentStatus: function (id, status, reason) { return notificationRequest('', 'POST', { status: status, reason: reason, confirmed: true }, false, false, '/api/admin/appointments/' + encodeURIComponent(id) + '/force-status') },
+  voidAppointment: function (id, reason) { return notificationRequest('', 'POST', { reason: reason, confirmed: true }, false, false, '/api/admin/appointments/' + encodeURIComponent(id) + '/void') },
+  restoreAppointment: function (id, reason) { return notificationRequest('', 'POST', { reason: reason, confirmed: true }, false, false, '/api/admin/appointments/' + encodeURIComponent(id) + '/restore') },
+  getAdminAppointments: function (includeVoided) {
+    return request('/api/admin/appointments' + (includeVoided ? '?includeVoided=1' : ''), 'GET').then(function (resp) {
       var list = (resp && resp.list) || []
       resp.list = list.map(normalizeAppointment)
       return resp
@@ -267,7 +282,8 @@ module.exports = {
         filePath: filePath,
         name: 'file',
         header: {
-          'openid': (app && app.globalData && app.globalData.openid) || ''
+          'openid': (app && app.globalData && app.globalData.openid) || '',
+          'Authorization': (app && app.globalData && app.globalData.notificationSession) ? ('Bearer ' + app.globalData.notificationSession) : ''
         },
         success: function (res) {
           var data = {}

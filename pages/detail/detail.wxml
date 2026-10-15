@@ -5,7 +5,7 @@
     <view class="status-desc">提交于 {{item.createdAtText}}</view>
   </view>
   <view class="tip-card">提示：维修前请自行备份重要文件，不要在故障描述中填写账号或密码。</view>
-  <view wx:if="{{role === 'user' && (item.status === 'pending' || item.status === 'accepted' || item.status === 'repairing')}}" class="card completion-code-card">
+  <view wx:if="{{role === 'user' && !item.isVoided && (item.status === 'pending' || item.status === 'accepted' || item.status === 'repairing')}}" class="card completion-code-card">
     <view class="detail-section-title">维修完成确认码</view>
     <view wx:if="{{completionCode}}" class="completion-code">{{completionCode}}</view>
     <view wx:elif="{{codeLoading}}" class="completion-note">正在加载确认码…</view>
@@ -13,14 +13,17 @@
     <view class="completion-note">请在维修完成并确认后，再将此码告知服务人员。完成预约后此码失效。</view>
   </view>
 
+  <view wx:if="{{item.isVoided}}" class="void-note card"><view>预约已作废，当前仅可查看历史。</view><view>原因：{{item.voidReason}}</view></view>
   <view class="detail-actions">
-    <button class="primary-button chat-cta" wx:if="{{role !== 'admin'}}" bindtap="goChat">点击与社团沟通</button>
-    <button class="secondary-button" wx:if="{{role === 'admin'}}" bindtap="goChat">进入沟通</button>
+    <button class="primary-button chat-cta" wx:if="{{role !== 'admin' && item.canChat !== false}}" bindtap="goChat">{{!item.canReply ? '查看历史沟通' : '点击与社团沟通'}}</button>
+    <button class="secondary-button" wx:if="{{role === 'admin' && item.canChat !== false}}" bindtap="goChat">{{!item.canReply ? '查看历史沟通' : '进入沟通'}}</button>
     <button class="secondary-button" wx:if="{{item.canEdit}}" bindtap="editBooking">修改预约</button>
     <button class="danger-button" wx:if="{{item.canCancel}}" bindtap="cancelBooking">取消预约</button>
   </view>
 
-  
+  <view wx:if="{{isRealAdmin && item.isVoided}}" class="card admin-special-actions"><view class="detail-section-title">管理员特殊操作</view><view class="completion-note">恢复后保留作废前的状态。进行中的预约会更新完成码；已完成或已取消的预约仍只读。</view><button class="secondary-button" disabled="{{adminActionBusy}}" bindtap="restoreAppointment">恢复预约</button></view>
+  <view wx:if="{{isRealAdmin && !item.isVoided}}" class="card admin-special-actions"><view class="detail-section-title">管理员特殊操作</view><view class="completion-note">特殊操作需要原因并记录日志。正常维修完成仍需用户确认码。</view><button class="secondary-button" disabled="{{adminActionBusy}}" bindtap="forceStatus">强制修改状态</button><button wx:if="{{item.status !== 'completed'}}" class="secondary-button" disabled="{{adminActionBusy}}" bindtap="forceComplete">强制完成（跳过确认码）</button><button class="danger-button" disabled="{{adminActionBusy}}" bindtap="voidAppointment">作废并隐藏</button></view>
+  <view class="card detail-card service-team"><view class="detail-section-title">服务人员</view><view wx:if="{{!item.assignees.length}}" class="completion-note">尚未分配服务人员</view><view wx:for="{{item.assignees}}" wx:for-item="person" wx:key="openid" class="service-person"><view class="service-person-head"><text class="service-position">{{person.isPrimary || person.position === 'primary' ? '主要负责人' : '随行人员'}}</text><text class="service-person-name">{{person.nickname || person.name || '社团成员'}}</text></view><view class="service-department">{{person.department || '未填写部门'}}</view><view class="service-phone-row"><text>{{person.phone || '暂未填写手机号'}}</text><button wx:if="{{person.phone}}" class="phone-copy" data-phone="{{person.phone}}" bindtap="copyPhone">复制</button></view></view></view>
   <view class="card detail-card">
     <view class="detail-section-title">预约安排</view>
     <view class="detail-row">

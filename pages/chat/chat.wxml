@@ -31,10 +31,11 @@
         >
           <view class="chat-bubble">
             <view class="chat-meta">{{msg.fromText}} · {{msg.atText}}</view>
-            <view wx:if="{{msg.type === 'image'}}" class="chat-image-wrap">
-              <image class="chat-image" src="{{msg.imageUrl}}" mode="widthFix" bindtap="previewImage" data-url="{{msg.imageUrl}}" lazy-load="true"></image>
+            <view wx:if="{{msg.isAssignmentNotice}}" class="assignment-notice"><view class="assignment-notice-title">{{msg.content}}</view><view wx:for="{{msg.assignmentPeople}}" wx:for-item="person" wx:key="openid" class="notice-person"><view>{{person.isPrimary || person.position === 'primary' ? '主要负责人' : '随行人员'}}：{{person.nickname || person.name || '社团成员'}} · {{person.department || '未填写部门'}}</view><view class="notice-phone"><text>{{person.phone || '暂未填写手机号'}}</text><button wx:if="{{person.phone}}" class="notice-copy" bindtap="copyPhone" data-phone="{{person.phone}}">复制</button></view></view><view wx:if="{{!msg.assignmentPeople.length}}">本次分配暂无服务人员</view><view class="notice-hint">此为分配时的信息，最新安排请查看预约详情。</view></view>
+            <view wx:elif="{{msg.type === 'image'}}" class="chat-image-wrap">
+              <view wx:if="{{msg.isAdminNotice}}" class="chat-text">社团负责人：</view><image class="chat-image" src="{{msg.imageUrl}}" mode="widthFix" bindtap="previewImage" data-url="{{msg.imageUrl}}" lazy-load="true"></image>
             </view>
-            <view wx:else class="chat-text">{{msg.content}}</view>
+            <view wx:else class="chat-text">{{msg.isAdminNotice ? '社团负责人：' : ''}}{{msg.content}}</view>
           </view>
         </view>
       </scroll-view>
@@ -54,7 +55,7 @@
       />
       <button class="chat-send" bindtap="sendMessage" disabled="{{sending}}">发送</button>
     </view>
-    <view class="chat-closed" wx:else>预约已结束，无法继续发送消息，有问题请再预约</view>
+    <view class="chat-closed" wx:else>{{item.isVoided ? '预约已作废，仅可查看历史消息' : '预约已结束，当前仅可查看历史消息'}}</view>
   </view>
 </view>
 

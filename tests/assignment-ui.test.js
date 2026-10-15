@@ -17,7 +17,7 @@ function fixture(role = 'admin', list) {
 }
 test('department tabs count eligible personnel and preserve custom / unassigned departments; no implicit primary', async () => {
   const f = fixture(); await f.open();
-  assert.deepEqual(Array.from(f.page.data.assignDepartmentTabs, t => [t.label, t.count]), [['全部人员', 5], ['技术部', 1], ['运营部', 1], ['宣传部', 1], ['其他部', 1], ['未分配', 1]]);
+  assert.deepEqual(Array.from(f.page.data.assignDepartmentTabs, t => [t.label, t.count]), [['全部人员', 6], ['技术部', 2], ['运营部', 1], ['宣传部', 1], ['其他部', 1], ['未分配', 1]]);
   assert.equal(f.page.data.assignPrimaryOpenid, '');
   f.page.confirmAssign(); assert.equal(f.calls.modals.length, 0); assert.match(f.page.data.assignError, /主负责人/);
   f.page.selectAssignmentDepartment(event('department', 'department:运营部'));
@@ -65,7 +65,18 @@ test('network save failure retains team and allows retry; malformed list is fail
   assert.equal(f.page.data.assignSaving, false); assert.equal(f.page.data.assignPrimaryOpenid, 'a'); assert.deepEqual(Array.from(f.page.data.assignAssistantOpenids), ['b']); assert.match(f.page.data.assignError, /未保存/);
   f.page.confirmAssign(); assert.equal(f.calls.modals.length, 2);
   f.calls.modals[1].success({ confirm: false }); f.api.getMemberDirectory = () => Promise.resolve({ list: {} }); await f.page.loadAssignableMembers();
-  assert.match(f.page.data.assignError, /加载失败/); assert.equal(f.page.data.assignAllMembers.length, 5);
+  assert.match(f.page.data.assignError, /加载失败/); assert.equal(f.page.data.assignAllMembers.length, 6);
+});
+
+test('admin can assign an active admin as primary or assistant with the correct role label', async () => {
+  for (const primary of [true, false]) {
+    const f = fixture(); await f.open();
+    assert.match(f.page.data.assignAllMembers.find(person => person.openid === 'admin').roleText, /管理员 admin/);
+    f.page.selectAssignmentPrimary(event('openid', primary ? 'admin' : 'a'));
+    if (!primary) f.page.toggleAssignmentAssistant(event('openid', 'admin'));
+    f.page.confirmAssign(); f.calls.modals[0].success({ confirm: true }); await tick();
+    assert.deepEqual(JSON.parse(JSON.stringify(f.calls.saves[0])), ['12', '技术部', primary ? 'admin' : 'a', primary ? [] : ['admin']]);
+  }
 });
 test('overlapping loads ignore earlier response; hide / unload / account switch ignore late responses', async () => {
   const f = fixture(), older = deferred(), newer = deferred(); f.api.getMemberDirectory = () => older.promise;

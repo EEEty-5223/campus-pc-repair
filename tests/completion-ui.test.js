@@ -38,6 +38,10 @@ test('late owner-code response after hide/account switch never renders code',asy
 test('appointment completed during code fetch clears code and updates displayed state',async()=>{
  const f=fixture();f.api.getCompletionCode=()=>Promise.resolve({completionCode:null,ended:true,used:true,status:'completed'});const d=f.detail();await d.loadItem();assert.equal(d.data.item.status,'completed');assert.equal(d.data.completionCode,'');assert.equal(d.data.codeLoading,false);
 });
+test('appointment voided during code fetch hides code and synchronizes reason without a spurious error',async()=>{
+ const f=fixture();f.api.getCompletionCode=()=>Promise.resolve({completionCode:null,ended:true,isVoided:true,status:'repairing',voidReason:'重复预约',voidedAt:'2026-10-15'});
+ const d=f.detail();await d.loadItem();assert.equal(d.data.item.isVoided,true);assert.equal(d.data.item.voidReason,'重复预约');assert.equal(d.data.item.canReply,false);assert.equal(d.data.completionCode,'');assert.equal(d.data.codeLoading,false);assert.equal(d.data.codeError,'');
+});
 test('returning to admin after hidden request finishes re-enables state buttons',async()=>{
  const f=fixture();let finish;f.api.updateStatus=()=>new Promise(r=>finish=r);
  f.status.changeStatus.call(f.page,{currentTarget:{dataset:{id:'appt',status:'completed'}}});f.calls.modals.shift().success({confirm:true,content:'0037'});f.page._chatVisible=false;f.page._chatVisibilityVersion++;finish({ok:true});await tick();assert.equal(f.page._statusBusy,false);

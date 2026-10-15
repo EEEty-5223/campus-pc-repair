@@ -1,10 +1,13 @@
 var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
+var adminActions = require('../../utils/appointment-admin-actions')
 var USE_BACKEND = true
 
 Page({
   data: {
     id: '',
+    isRealAdmin: false,
+    adminActionBusy: false,
     item: null,
     role: 'user',
     chatText: '',
@@ -31,7 +34,7 @@ Page({
     this._detailDisposed = false
     var version = this._detailVersion = (this._detailVersion || 0) + 1
     this.setData({ completionCode: '', codeError: '' })
-    function load() { if (self._detailVisible && version === self._detailVersion) return self.loadItem() }
+    function load() { if (self._detailVisible && version === self._detailVersion) { var u = app.globalData || {}; self.setData({ isRealAdmin: u.role === 'admin' && !!u.notificationSession && !u.isSimulator, adminActionBusy: !!self._adminActionBusy }); return self.loadItem() } }
     // 等登录完成再拉数据,避免 openid 还没拿到时显示本地旧数据
     if (app && app.globalData && app.globalData.loginReady) {
       app.globalData.loginReady
@@ -46,13 +49,16 @@ Page({
   detailIdentity: function () { var u = (getApp() && getApp().globalData) || {}; return [u.openid, u.notificationSession, this.data.id, this.data.role].join(':') },
   loadCompletionCode: function () {
     var self = this, item = this.data.item
-    if (this.data.role !== 'user' || !item || ['pending', 'accepted', 'repairing'].indexOf(item.status) === -1 || this._detailVisible === false) { this.setData({ completionCode: '', codeError: '', codeLoading: false }); return Promise.resolve() }
+    if (this.data.role !== 'user' || !item || item.isVoided || ['pending', 'accepted', 'repairing'].indexOf(item.status) === -1 || this._detailVisible === false) { this.setData({ completionCode: '', codeError: '', codeLoading: false }); return Promise.resolve() }
     var who = this.detailIdentity(), version = this._codeLoad = (this._codeLoad || 0) + 1
-    function current() { return self._detailVisible !== false && who === self.detailIdentity() && version === self._codeLoad && self.data.item && ['pending', 'accepted', 'repairing'].indexOf(self.data.item.status) !== -1 }
+    function current() { return self._detailVisible !== false && who === self.detailIdentity() && version === self._codeLoad && self.data.item && !self.data.item.isVoided && ['pending', 'accepted', 'repairing'].indexOf(self.data.item.status) !== -1 }
     this.setData({ completionCode: '', codeError: '', codeLoading: true })
     return api.getCompletionCode(item.id).then(function (r) {
       if (!current()) return
-      if (r && r.ended && ['completed', 'cancelled'].indexOf(r.status) !== -1) { var ended = Object.assign({}, self.data.item, { status: r.status }); self.setData({ item: appointments.decorate ? appointments.decorate(ended) : ended, completionCode: '', codeLoading: false }); return }
+      if (r && r.ended && (r.isVoided || ['completed', 'cancelled'].indexOf(r.status) !== -1)) {
+        var ended = Object.assign({}, self.data.item, { status: r.status || self.data.item.status, isVoided: !!r.isVoided, voidReason: r.voidReason || '', voidedAt: r.voidedAt || '', canReply: false })
+        self.setData({ item: appointments.decorate ? appointments.decorate(ended) : ended, completionCode: '', codeLoading: false, codeError: '' }); return
+      }
       if (!r || !/^\d{4}$/.test(r.completionCode || '')) throw new Error('invalid completion code')
       self.setData({ completionCode: r.completionCode })
     }).catch(function () { if (current()) self.setData({ completionCode: '', codeError: '确认码暂时无法加载，请刷新重试。' }) }).then(function () { if (current()) self.setData({ codeLoading: false }) })
@@ -64,16 +70,21 @@ Page({
     function current() { return self._detailVisible !== false && who === self.detailIdentity() && version === self._itemLoad }
     this._codeLoad = (this._codeLoad || 0) + 1
     this.setData({ item: null, completionCode: '', codeError: '', codeLoading: false, loading: true, loadError: '' })
-    var fetch = this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('login required')))
+    var fetch = typeof api.getAppointment === 'function' ? api.getAppointment(id) : (this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('login required'))))
     return fetch.then(function (r) {
       if (!current()) return
-      if (!r || !Array.isArray(r.list)) throw new Error('invalid appointments')
-      var item = r.list.find(function (x) { return x.id === id })
+      if (!r || (!r.item && !Array.isArray(r.list))) throw new Error('invalid appointments')
+      var item = r.item || r.list.find(function (x) { return x.id === id })
       if (!item) throw new Error('appointment missing')
       self.setData({ item: appointments.decorate ? appointments.decorate(item) : item, loading: false })
       return self.loadCompletionCode()
     }).catch(function () { if (current()) self.setData({ item: null, completionCode: '', loading: false, loadError: '预约暂时无法加载，请刷新重试。' }) })
   },
+  forceStatus: adminActions.forceStatus,
+  forceComplete: adminActions.forceComplete,
+  voidAppointment: adminActions.voidAppointment,
+  restoreAppointment: adminActions.restoreAppointment,
+  copyPhone: function (event) { var phone = String(event.currentTarget.dataset.phone || '').replace(/[^0-9+]/g, ''); if (phone) wx.setClipboardData({ data: phone, success: function () { wx.showToast({ title: '手机号已复制', icon: 'success' }) } }) },
   editBooking: function () {
     wx.navigateTo({
       url: '/pages/booking/booking?id=' + this.data.id
@@ -116,6 +127,7 @@ Page({
   },
 
   goChat: function () {
+    if (!this.data.item || this.data.item.canChat === false) return
     wx.navigateTo({
       url: '/pages/chat/chat?id=' + this.data.id + '&role=' + this.data.role
     })

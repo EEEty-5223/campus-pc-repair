@@ -46,6 +46,23 @@ for(const role of ['admin','leader','member'])test('devtools authenticates '+rol
   await f.api.silentLogin({requireReal:true});assert.equal(f.calls.login,3);
 });
 test('actual phone still authenticates through same backend',async()=>{const f=fixture({platform:'ios',role:'admin'});assert.equal((await f.api.silentLogin()).role,'admin');assert.equal(f.calls.login,1);});
+
+for(const platform of ['ios','android'])for(const envVersion of ['develop','trial','release'])test('phone '+platform+' '+envVersion+' login and booking always use public server',async()=>{
+  const f=fixture({platform,envVersion,role:'admin'});
+  f.app.onLaunch();await f.app.globalData.loginReady;
+  await f.api.createAppointment({name:'测试',phone:'13800000000',description:'仅请求桩验证'});
+  assert.equal(f.calls.requests.find(o=>o.url.endsWith('/api/login')).url,'https://campusapi.keon5223.xyz/api/login');
+  const booking=f.calls.requests.find(o=>o.url.endsWith('/api/appointments'));
+  assert.equal(booking.url,'https://campusapi.keon5223.xyz/api/appointments');
+  assert.equal(booking.header.Authorization,'Bearer '+f.user.notificationSession);
+});
+
+test('develop simulator keeps independent local member endpoint',async()=>{
+  const f=fixture({platform:'devtools',envVersion:'develop'});
+  await assert.rejects(f.api.silentLogin());
+  assert.equal(f.calls.requests[0].url,'http://127.0.0.1:3000/api/local-dev/login');
+  assert.equal(f.calls.login,0);
+});
 test('non-member retains join entry without receiving club permission',async()=>{const f=fixture({role:'user'});f.app.onLaunch();await f.app.globalData.loginReady;f.page.onShow();await new Promise(resolve=>setImmediate(resolve));assert.equal(f.page.data.isAdmin,false);});
 for(const options of [{noCode:true},{loginFail:true},{networkFail:true},{statusCode:401},{response:{ok:false,error:'login failed'}},{response:{ok:true,openid:'simulator_openid_dev',isAdmin:true,role:'admin'}},{response:{ok:true,openid:'fake-user',_simulator:true}},{response:{ok:true}}])test('failed or fake login never falls back: '+JSON.stringify(options),async()=>{
   const f=fixture(options);await assert.rejects(f.api.silentLogin({requireReal:true}));assert.equal(f.calls.login,1);assert.equal(f.app.globalData.openid,'');assert.equal(f.app.globalData.isAdmin,false);if(options.noCode||options.loginFail)assert.equal(f.calls.requests.length,0);

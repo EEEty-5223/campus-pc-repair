@@ -10,7 +10,7 @@ module.exports = {
   changeStatus: function (event) {
     var self = this, id = event.currentTarget.dataset.id, status = event.currentTarget.dataset.status
     var item = (this.data.allItems || []).find(function (r) { return r.id === id })
-    if (!item || this._statusBusy || !(allowed[item.status] || []).includes(status)) return
+    if (!item || item.isVoided || this._statusBusy || !(allowed[item.status] || []).includes(status)) return
     if (status === 'accepted' && !(Number(item.assignedActiveCount) > 0 || (item.assignedActiveCount === undefined && item.assignedOpenid))) { wx.showToast({ title: '请先分配服务人员，再确认预约', icon: 'none' }); return }
     var who = identity(), version = this._chatVisibilityVersion, original = item.status
     function current() { return who === identity() && version === self._chatVisibilityVersion && self._chatVisible !== false }

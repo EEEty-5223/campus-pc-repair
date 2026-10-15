@@ -11,12 +11,17 @@ function state(k) {
   try { saved = wx.getStorageSync(k) } catch (_) {}
   return memory[k] = saved && typeof saved === 'object' ? { last: decimal(saved.last) || '0', seen: Array.isArray(saved.seen) ? saved.seen : [] } : { last: '0', seen: [] }
 }
-function incoming(role, message) { return message && (message.from || message.from_role) === (role === 'admin' ? 'user' : 'admin') }
+function incoming(role, message, openid) {
+  if (!message) return false
+  if (message.kind === 'assignment_notice') return true
+  if (message.senderOpenid) return message.senderOpenid !== openid
+  return (message.from || message.from_role) === (role === 'admin' ? 'user' : 'admin')
+}
 function markRead(openid, appointmentId, viewerRole, messages) {
   if (!openid || !appointmentId) return
   var k = key(openid, appointmentId, viewerRole), value = state(k)
   ;(messages || []).forEach(function (m) {
-    if (!incoming(viewerRole, m) || !m.id) return
+    if (!incoming(viewerRole, m, openid) || !m.id) return
     var id = String(m.id), number = decimal(id)
     if (number) { if (later(number, value.last)) value.last = number }
     else if (value.seen.indexOf(id) === -1) value.seen.push(id)
@@ -27,7 +32,7 @@ function countUnread(openid, appointmentId, viewerRole, messages) {
   if (!openid || !appointmentId) return 0
   var value = state(key(openid, appointmentId, viewerRole)), ids = Object.create(null), count = 0
   ;(messages || []).forEach(function (m) {
-    if (!incoming(viewerRole, m) || !m.id) return
+    if (!incoming(viewerRole, m, openid) || !m.id) return
     var id = String(m.id), number = decimal(id)
     if (ids[id]) return
     ids[id] = true

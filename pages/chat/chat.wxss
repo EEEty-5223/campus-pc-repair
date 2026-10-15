@@ -189,3 +189,5 @@
   font-size: 24rpx;
   text-align: center;
 }
+
+.chat-msg.msg-assignment,.chat-msg.msg-admin-notice{justify-content:center}.msg-assignment .chat-bubble,.msg-admin-notice .chat-bubble{max-width:90%;background:#f1f5f9;border:1rpx solid #e2e8f0;border-radius:14rpx;color:#475569}.msg-admin-notice .chat-text{font-size:24rpx;color:#475569}.msg-admin-notice .chat-meta,.msg-assignment .chat-meta{color:#64748b}.assignment-notice{font-size:25rpx;line-height:1.7}.assignment-notice-title{font-weight:600}.notice-person{padding:14rpx 0;border-bottom:1rpx solid #e2e8f0}.notice-phone{display:flex;align-items:center;justify-content:space-between;gap:16rpx}.notice-copy{width:auto!important;min-width:0!important;padding:0 20rpx;margin:0;line-height:48rpx;font-size:23rpx;color:#2563eb;background:white}.notice-hint{margin-top:14rpx;font-size:21rpx;color:#64748b}

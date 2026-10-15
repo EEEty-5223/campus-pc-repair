@@ -2,7 +2,7 @@ var api = require('./api-request')
 function actor() { return (getApp() && getApp().globalData) || {} }
 function identity() { var u = actor(); return [u.openid || '', u.notificationSession || '', u.role || '', u.department || '', !!u.isSimulator].join(':') }
 function allowed(user, member) {
-  if (!member || typeof member.openid !== 'string' || !member.openid || !(member.isActive === true || Number(member.status) === 1) || (member.status !== undefined && Number(member.status) !== 1) || ['leader', 'member'].indexOf(member.role) === -1) return false
+  if (!member || typeof member.openid !== 'string' || !member.openid || !(member.isActive === true || Number(member.status) === 1) || (member.status !== undefined && Number(member.status) !== 1) || ['admin', 'leader', 'member'].indexOf(member.role) === -1) return false
   return user.role === 'admin' || (user.role === 'leader' && member.role === 'member' && !!user.department && member.department === user.department)
 }
 function unique(ids) { return ids.filter(function (id, index) { return typeof id === 'string' && id && ids.indexOf(id) === index }) }
@@ -56,7 +56,7 @@ var methods = {
       if (!response || !Array.isArray(response.list)) throw new Error('invalid member list')
       var seen = {}, user = actor()
       var list = response.list.filter(function (person) { if (!allowed(user, person) || seen[person.openid]) return false; seen[person.openid] = true; return true }).map(function (person) {
-        return Object.assign({}, person, { displayName: person.name || person.nickname || '未填写姓名', roleText: person.role === 'leader' ? '负责人 leader' : '成员 member' })
+        return Object.assign({}, person, { displayName: person.name || person.nickname || '未填写姓名', roleText: person.role === 'admin' ? '管理员 admin' : (person.role === 'leader' ? '负责人 leader' : '成员 member') })
       })
       self.setData({ assignAllMembers: list, assignDepartmentTabs: tables(list), assignLoading: false, assignLoaded: true })
       self.refreshAssignmentView()

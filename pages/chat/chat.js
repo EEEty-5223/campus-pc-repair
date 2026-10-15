@@ -55,28 +55,37 @@ Page({
     if (!this._visible || !id) return Promise.resolve()
     var user = (getApp() && getApp().globalData) || {}, openid = user.openid || ''
     var identity = this.chatIdentity(), version = this._visibilityVersion, loadId = (this._loadId || 0) + 1
+    if (this._viewerIdentity && this._viewerIdentity !== identity) this.setData({ item: null, chatText: '' })
+    this._viewerIdentity = identity
     this._loadId = loadId
     var current = function () { return self._visible && version === self._visibilityVersion && loadId === self._loadId && identity === self.chatIdentity() }
     this.setData({ role: this.resolveViewerRole(), loading: !this.data.item, loadError: '' })
-    var fetch = this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('请先登录')))
+    var fetch = typeof api.getAppointment === 'function' ? api.getAppointment(id) : (this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('请先登录'))))
     return fetch.then(function (response) {
       if (!current()) return null
-      if (!response || !Array.isArray(response.list)) throw new Error('预约资料无法读取')
-      var item = response.list.find(function (record) { return String(record.id) === String(id) })
+      if (!response || (!response.item && !Array.isArray(response.list))) throw new Error('预约资料无法读取')
+      var item = response.item || response.list.find(function (record) { return String(record.id) === String(id) })
       if (!item) throw new Error('未找到可查看的预约')
+      if (item.canChat === false) throw Object.assign(new Error('你当前无权查看该预约聊天'), { code: 'APPOINTMENT_FORBIDDEN' })
       return api.getMessages(id).then(function (response) {
         if (!response || !Array.isArray(response.list)) throw new Error('沟通记录无法读取')
-        return Object.assign({}, item, { messages: response.list })
+        return Object.assign({}, item, { messages: response.list, isVoided: response.isVoided === undefined ? item.isVoided : response.isVoided, canReply: response.canReply === undefined ? item.canReply : response.canReply })
       })
     }).then(function (item) {
       if (!current() || !item) return
       var decorated = appointments.decorate ? appointments.decorate(item) : item
-      decorated.messages = (decorated.messages || []).map(function (message) { return Object.assign({}, message, { viewerClass: message.from === self.data.role ? 'msg-own' : 'msg-other', fromText: message.from === 'admin' ? '社团成员' : (self.data.role === 'admin' ? '预约用户' : '我') }) })
+      decorated.messages = (decorated.messages || []).map(function (message) {
+        var notice = message.kind === 'assignment_notice', adminNotice = message.kind === 'admin_notice'
+        var own = message.senderOpenid ? message.senderOpenid === openid : message.from === self.data.role
+        var label = message.senderName || (message.from === 'admin' ? '社团成员' : (self.data.role === 'admin' ? '预约用户' : '我'))
+        return Object.assign({}, message, { viewerClass: notice ? 'msg-assignment' : (adminNotice ? 'msg-admin-notice' : (own ? 'msg-own' : 'msg-other')), fromText: notice ? '人员分配通知' : label, isAssignmentNotice: notice, isAdminNotice: adminNotice })
+      })
+      decorated.canReply = !decorated.isVoided && decorated.canReply
       var last = decorated.messages[decorated.messages.length - 1]
       self.setData({ item: decorated, loading: false, loadError: '', scrollIntoView: last ? 'msg-' + last.id : '' }, function () {
         if (current()) unread.markRead(openid, id, self.data.role, decorated.messages)
       })
-    }).catch(function (error) { if (current()) self.setData({ loading: false, loadError: error.message || '聊天加载失败，请重试。' }) })
+    }).catch(function (error) { if (current()) { var patch = { loading: false, loadError: error.message || '聊天加载失败，请重试。' }; if (['APPOINTMENT_FORBIDDEN', 'APPOINTMENT_NOT_FOUND', 'MEMBER_REQUIRED', 'SESSION_EXPIRED', 'REAL_LOGIN_REQUIRED'].indexOf(error.code) !== -1) patch.item = null; else if (self.data.item) patch.item = Object.assign({}, self.data.item, { canReply: false }); self.setData(patch) } })
   },
   onChatInput: function (event) { this.setData({ chatText: event.detail.value }) },
   sendMessage: function () {
@@ -91,7 +100,7 @@ Page({
       self._sendInFlight = false
       if (!current()) return
       self.setData({ sending: false, chatText: '' }); if (self._visible) return self.loadItem()
-    }).catch(function () { self._sendInFlight = false; if (current()) { self.setData({ sending: false }); wx.showToast({ title: '发送失败，请重试', icon: 'none' }) } })
+    }).catch(function (error) { self._sendInFlight = false; if (current()) { self.setData({ sending: false, item: Object.assign({}, self.data.item, { canReply: false }) }); wx.showToast({ title: error.message || '发送失败，请重试', icon: 'none' }); return self.loadItem() } })
   },
   chooseImage: function () {
     var self = this, identity = this.chatIdentity()
@@ -110,10 +119,11 @@ Page({
     var current = function () { return self._visible && !self._disposed && self._visibilityVersion === version && self._sendNonce === nonce && identity === self.chatIdentity() }
     this.setData({ sending: true })
     return api.uploadImage(filePath).then(function (imageUrl) {
-      if (self._disposed || identity !== self.chatIdentity()) throw new Error('登录账号已改变')
+      if (!current()) throw new Error('页面或登录状态已改变')
       return api.sendImageMessage(self.data.id, self.data.role, imageUrl)
     }).then(function () { self._sendInFlight = false; if (current()) { self.setData({ sending: false }); return self.loadItem() } })
-      .catch(function () { self._sendInFlight = false; if (current()) { self.setData({ sending: false }); wx.showToast({ title: '图片发送失败，请重试', icon: 'none' }) } })
+      .catch(function (error) { self._sendInFlight = false; if (current()) { self.setData({ sending: false, item: Object.assign({}, self.data.item, { canReply: false }) }); wx.showToast({ title: error.message || '图片发送失败，请重试', icon: 'none' }); return self.loadItem() } })
   },
+  copyPhone: function (event) { var phone = String(event.currentTarget.dataset.phone || '').replace(/[^0-9+]/g, ''); if (phone) wx.setClipboardData({ data: phone, success: function () { wx.showToast({ title: '手机号已复制', icon: 'success' }) } }) },
   previewImage: function (event) { var url = event.currentTarget.dataset.url; if (url) wx.previewImage({ urls: [url], current: url }) }
 })

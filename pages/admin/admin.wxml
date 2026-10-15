@@ -61,7 +61,7 @@
 
     <scroll-view class="filter-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
       <view class="filter-row">
-        <view class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}" wx:for="{{filters}}" wx:key="value" data-status="{{item.value}}" bindtap="selectFilter">{{item.label}} {{item.count}}</view>
+        <view class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}" wx:for="{{filters}}" wx:if="{{item.value !== 'voided' || isRealAdmin}}" wx:key="value" data-status="{{item.value}}" bindtap="selectFilter">{{item.label}} {{item.count}}</view>
       </view>
     </scroll-view>
 
@@ -101,13 +101,19 @@
           已分配：{{item.assignedDepartment}}
         </view>
 
+        <view wx:if="{{item.isVoided}}" class="void-reason">作废原因：{{item.voidReason}}</view>
         <view class="admin-actions">
           <button class="mini-button detail-button" data-id="{{item.id}}" bindtap="goDetail">详情</button>
-          <button class="mini-button confirm-button" wx:if="{{item.status === 'pending'}}" disabled="{{statusBusy || item.assignedActiveCount < 1}}" data-id="{{item.id}}" data-status="accepted" bindtap="changeStatus">{{item.assignedActiveCount < 1 ? '请先分配人员' : '确认预约'}}</button>
-          <button class="mini-button" wx:if="{{item.status === 'accepted'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="repairing" bindtap="changeStatus">开始维修</button>
-          <button class="mini-button complete-button" wx:if="{{item.status === 'repairing'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="completed" bindtap="changeStatus">完成</button>
-          <button class="mini-button cancel-button" wx:if="{{item.status !== 'completed' && item.status !== 'cancelled'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="cancelled" bindtap="changeStatus">取消</button>
-          <button class="mini-button" wx:if="{{(role === 'admin' || role === 'leader') && item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" bindtap="showAssign">分配</button>
+          <button wx:if="{{!item.canReply && item.canChat !== false}}" class="mini-button detail-button" data-id="{{item.id}}" bindtap="goChat">{{item._messagesFailed ? '重试沟通' : '历史沟通'}}</button>
+          <button wx:if="{{isRealAdmin && item.isVoided}}" class="mini-button confirm-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="restoreAppointment">恢复预约</button>
+          <button wx:if="{{isRealAdmin && !item.isVoided}}" class="mini-button special-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="forceStatus">强制改状态</button>
+          <button wx:if="{{isRealAdmin && !item.isVoided && item.status !== 'completed'}}" class="mini-button special-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="forceComplete">强制完成</button>
+          <button wx:if="{{isRealAdmin && !item.isVoided}}" class="mini-button cancel-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="voidAppointment">作废隐藏</button>
+          <button class="mini-button confirm-button" wx:if="{{!item.isVoided && item.status === 'pending'}}" disabled="{{statusBusy || item.assignedActiveCount < 1}}" data-id="{{item.id}}" data-status="accepted" bindtap="changeStatus">{{item.assignedActiveCount < 1 ? '请先分配人员' : '确认预约'}}</button>
+          <button class="mini-button" wx:if="{{!item.isVoided && item.status === 'accepted'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="repairing" bindtap="changeStatus">开始维修</button>
+          <button class="mini-button complete-button" wx:if="{{!item.isVoided && item.status === 'repairing'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="completed" bindtap="changeStatus">完成</button>
+          <button class="mini-button cancel-button" wx:if="{{!item.isVoided && item.status !== 'completed' && item.status !== 'cancelled'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="cancelled" bindtap="changeStatus">取消</button>
+          <button class="mini-button" wx:if="{{!item.isVoided && (role === 'admin' || role === 'leader') && item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" bindtap="showAssign">分配</button>
         </view>
       </view>
     </view>
@@ -163,7 +169,7 @@
         <view class="apply-meta">提交时间：{{item.created_at}}</view>
         <view class="apply-meta" wx:if="{{item.reviewed_at}}">审核时间：{{item.reviewed_at}}</view>
 
-        <view class="apply-actions" wx:if="{{item.status === 'pending'}}">
+        <view class="apply-actions" wx:if="{{!item.isVoided && item.status === 'pending'}}">
           <button class="mini-button confirm-button" data-id="{{item.id}}" data-action="approve" data-name="{{item.name}}" bindtap="reviewApplication">同意</button>
           <button class="mini-button cancel-button" data-id="{{item.id}}" data-action="reject" data-name="{{item.name}}" bindtap="reviewApplication">拒绝</button>
         </view>
