@@ -1,5 +1,6 @@
 var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
+var swipe = require('../../utils/swipe-navigation')
 var USE_BACKEND = true   // 切换:走后端 API / 本地存储
 
 Page({
@@ -13,6 +14,20 @@ Page({
       { value: 'closed', label: '已结束' }
     ]
   },
+
+  onNavigationTouchStart: function (event) { swipe.start(this, event) },
+  onNavigationTouchMove: function (event) { swipe.move(this, event) },
+  onNavigationTouchCancel: function () { swipe.cancel(this) },
+  onNavigationTouchEnd: function (event) {
+    var gesture = swipe.end(this, event)
+    if (!gesture) return
+    if (gesture.scope === 'records') {
+      var next = swipe.adjacent(this.data.filters.map(function (item) { return item.value }), this.data.currentFilter, gesture.direction)
+      if (next) this.selectFilter({ currentTarget: { dataset: { filter: next } } })
+    } else if (gesture.direction === 'right') swipe.switchMainTab(this, '/pages/index/index')
+  },
+  onHide: function () { swipe.cancel(this) },
+  onUnload: function () { swipe.cancel(this) },
 
   onShow: function () {
     var self = this

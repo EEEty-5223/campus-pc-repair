@@ -16,8 +16,8 @@ function operate(page, id, status) {
     if (!r.confirm || !current() || !unchanged() || page._adminActionBusy) return
     var reason = String(r.content || '').trim()
     if (!reason || reason.length > 256) { wx.showToast({ title: '请填写1至256字的原因', icon: 'none' }); return }
-    var target = restoring ? '恢复后保留原状态“' + labels[statuses.indexOf(item.status)] + '”。进行中的预约将生成新完成码；已完成或已取消的预约仍只读。' : (status === null ? '作废后从正常列表隐藏，聊天仅可查看历史。' : '将状态强制改为“' + labels[statuses.indexOf(status)] + '”。' + (status === 'completed' ? '此次操作将跳过用户完成码。' : ''))
-    wx.showModal({ title: '再次确认操作', content: target + '\n原因：' + reason + '\n此操作将记录管理员身份和时间。', confirmText: '确认操作', confirmColor: '#dc2626', success: function (confirm) {
+    var target = restoring ? '恢复后保留原状态“' + labels[statuses.indexOf(item.status)] + '”。进行中的预约将生成新完成码；已完成或已取消的预约仍只读。' : (status === null ? '作废后从正常列表隐藏，聊天仅可查看历史。' : '将状态强制改为“' + labels[statuses.indexOf(status)] + '”。' + (status === 'completed' ? '此次操作将跳过用户完成码。' : (status === 'repairing' ? '此次操作将跳过用户开工码。' : '')))
+    wx.showModal({ title: '再次确认操作', content: target + '\n原因：' + reason + '\n此操作将记录管理员身份和时间，并向用户和分配人员展示管理员介入及原因。', confirmText: '确认操作', confirmColor: '#dc2626', success: function (confirm) {
       if (!confirm.confirm || !current() || !unchanged() || page._adminActionBusy) return
       page._adminActionBusy = true; page.setData({ adminActionBusy: true })
       var action = restoring ? api.restoreAppointment(id, reason) : (status === null ? api.voidAppointment(id, reason) : api.forceAppointmentStatus(id, status, reason))

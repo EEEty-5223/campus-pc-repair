@@ -43,6 +43,11 @@ function normalizeAppointment(row) {
     voidedAt: row.voidedAt || '',
     canChat: row.canChat,
     canReply: row.canReply,
+    canProcess: row.canProcess,
+    canAssign: row.canAssign,
+    isAssignedToMe: !!row.isAssignedToMe,
+    repairHistory: Array.isArray(row.repairHistory) ? row.repairHistory : [],
+    adminIntervened: !!row.adminIntervened,
     assignedDepartment: row.assigned_department,
     assignedOpenid: row.assigned_openid,
     assistantOpenids: row.assistantOpenids || row.assistant_openids || [],
@@ -64,7 +69,7 @@ function normalizeMessage(row) {
     from: row.from_role || row.from,
     senderOpenid: row.senderOpenid || '',
     senderName: row.senderName || '',
-    kind: ['assignment_notice', 'admin_notice'].indexOf(row.kind) !== -1 ? row.kind : 'normal',
+    kind: ['assignment_notice', 'admin_notice', 'admin_intervention'].indexOf(row.kind) !== -1 ? row.kind : 'normal',
     assignmentPeople: Array.isArray(row.assignmentPeople) ? row.assignmentPeople : [],
     type: row.type || 'text',
     content: row.content || '',
@@ -228,10 +233,13 @@ module.exports = {
       return resp
     })
   },
-  updateStatus: function (id, status, completionCode) {
+  updateStatus: function (id, status, verificationCode) {
     var body = { id: id, status: status }
-    if (typeof completionCode === 'string') body.completionCode = completionCode
+    if (typeof verificationCode === 'string') body[status === 'repairing' ? 'startCode' : 'completionCode'] = verificationCode
     return notificationRequest('', 'POST', body, false, false, '/api/appointments/status')
+  },
+  getStartCode: function (id) {
+    return notificationRequest('', 'GET', {}, false, false, '/api/appointments/' + encodeURIComponent(id) + '/start-code')
   },
   getCompletionCode: function (id) {
     return notificationRequest('', 'GET', {}, false, false, '/api/appointments/' + encodeURIComponent(id) + '/completion-code')

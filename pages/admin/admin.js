@@ -7,6 +7,7 @@ var memberSession = require('../../utils/member-session')
 var statusUI = require('../../utils/appointment-status-ui')
 var assignmentUI = require('../../utils/assignment-ui')
 var adminActions = require('../../utils/appointment-admin-actions')
+var swipe = require('../../utils/swipe-navigation')
 var USE_BACKEND = true
 
 function copyMember(member) { return JSON.parse(JSON.stringify(member)) }
@@ -31,6 +32,32 @@ function validOwnProfile(profile) {
   return !!profile && !Array.isArray(profile) && profile.role === 'admin' && ['name', 'nickname', 'contact', 'department', 'displayTag'].every(function (field) { return typeof profile[field] === 'string' })
 }
 
+function cardPrimary(item, role, realAdmin) {
+  if (item.canProcess === false && !(item.status === 'pending' && item.canAssign && !Number(item.assignedActiveCount)) && !item.isVoided) return null
+  if (item.isVoided) return realAdmin ? { label: '恢复预约', handler: 'restoreAppointment' } : null
+  if (item.status === 'pending') {
+    var assigned = Number(item.assignedActiveCount) > 0 || (item.assignedActiveCount === undefined && item.assignedOpenid)
+    if (!assigned) return ['admin', 'leader'].indexOf(role) !== -1 ? { label: '分配人员', handler: 'showAssign' } : { label: '等待分配', disabled: true }
+    return { label: '确认预约', handler: 'changeStatus', status: 'accepted' }
+  }
+  if (item.status === 'accepted') return { label: '开始维修', handler: 'changeStatus', status: 'repairing' }
+  if (item.status === 'repairing') return { label: '完成维修', handler: 'changeStatus', status: 'completed' }
+  return null
+}
+function cardOptions(item, role, realAdmin) {
+  var options = [], active = !item.isVoided && ['pending', 'accepted', 'repairing'].indexOf(item.status) !== -1
+  if (item.canChat !== false) options.push({ label: item.canReply ? '进入沟通' : '查看历史沟通', handler: 'goChat' })
+  if (active && item.canAssign !== false && ['admin', 'leader'].indexOf(role) !== -1) options.push({ label: '调整服务人员', handler: 'showAssign' })
+  if (active && item.canProcess !== false) options.push({ label: '取消预约', handler: 'changeStatus', status: 'cancelled', danger: true })
+  if (realAdmin && !item.isVoided) {
+    options.push({ label: '强制修改状态', handler: 'forceStatus' })
+    if (item.status !== 'completed') options.push({ label: '强制完成维修', handler: 'forceComplete' })
+    options.push({ label: '作废并隐藏', handler: 'voidAppointment', danger: true })
+  }
+  return options
+}
+function cardSnapshot(item) { return JSON.stringify([item.id, item.status, !!item.isVoided, item.assignedOpenid, item.assistantOpenids, item.assignedActiveCount]) }
+
 Page(assignmentUI.withPage(Object.assign({
   data: Object.assign({}, notifications.data, {
     activeTab: 'appointments',
@@ -41,6 +68,9 @@ Page(assignmentUI.withPage(Object.assign({
     items: [],
     currentFilter: 'all',
     draftReplies: {},
+    expandedReplies: {},
+    cardMenuVisible: false,
+    cardMenuActions: [],
     filters: [{
         value: 'all',
         label: '全部',
@@ -172,7 +202,7 @@ Page(assignmentUI.withPage(Object.assign({
       if (self._chatVisible && self.data.activeTab === 'appointments') self.loadItems().then(function () { self.scheduleChatPolling() })
     }, 10000)
   },
-  onHide: function () { this._chatVisible = false; this._chatVisibilityVersion = (this._chatVisibilityVersion || 0) + 1; this._itemsLoadId = (this._itemsLoadId || 0) + 1; this.stopChatPolling() },
+  onHide: function () { this.closeCardMenu(); swipe.cancel(this); this._chatVisible = false; this._chatVisibilityVersion = (this._chatVisibilityVersion || 0) + 1; this._itemsLoadId = (this._itemsLoadId || 0) + 1; this.stopChatPolling() },
   onUnload: function () { this.onHide() },
 
   loadItems: function () {
@@ -189,9 +219,11 @@ Page(assignmentUI.withPage(Object.assign({
         if (decorated.latestMessage) {
           var message = decorated.latestMessage, viewer = (getApp() && getApp().globalData) || {}
           var own = message.senderOpenid ? message.senderOpenid === viewer.openid : message.from === 'admin'
-          var notice = message.kind === 'assignment_notice' || message.kind === 'admin_notice'
-          decorated.latestMessage = Object.assign({}, message, { viewerClass: !notice && own ? 'reply-own' : 'reply-other', fromText: message.kind === 'assignment_notice' ? '人员分配通知' : (message.kind === 'admin_notice' ? '社团负责人' : (message.senderName || (message.from === 'admin' ? '社团成员' : '预约用户'))) })
+          var notice = message.kind === 'assignment_notice' || (message.kind === 'admin_notice' || message.kind === 'admin_intervention')
+          decorated.latestMessage = Object.assign({}, message, { viewerClass: !notice && own ? 'reply-own' : 'reply-other', fromText: message.kind === 'assignment_notice' ? '人员分配通知' : (message.kind === 'admin_intervention' ? '管理员介入' : (message.kind === 'admin_notice' ? '社团负责人' : (message.senderName || (message.from === 'admin' ? '社团成员' : '预约用户')))) })
         }
+        decorated.cardPrimary = cardPrimary(decorated, self.data.role, self.data.isRealAdmin)
+        decorated.cardHasMore = cardOptions(decorated, self.data.role, self.data.isRealAdmin).length > 0
         return decorated
       })
       var filters = self.data.filters.map(function (filter) {
@@ -257,6 +289,27 @@ Page(assignmentUI.withPage(Object.assign({
     return Promise.resolve()
   },
 
+  onNavigationTouchStart: function (event) { swipe.start(this, event) },
+  onNavigationTouchMove: function (event) { swipe.move(this, event) },
+  onNavigationTouchCancel: function () { swipe.cancel(this) },
+  onNavigationTouchEnd: function (event) {
+    var gesture = swipe.end(this, event)
+    if (!gesture || this.data.assignDialogVisible || this.data.cardMenuVisible || this.data.statusBusy || this.data.adminActionBusy) return
+    var next
+    if (gesture.scope === 'members' && this.data.activeTab === 'members') {
+      var departments = this.data.memberDepartmentFilters.map(function (item) { return item.value })
+      next = swipe.adjacent(departments, this.data.memberDepartmentFilter, gesture.direction)
+      if (next) this.selectMemberDepartment({ currentTarget: { dataset: { department: next } } })
+    } else if (gesture.scope === 'statuses' && this.data.activeTab === 'appointments') {
+      var values = this.data.filters.filter(function (item) { return item.value !== 'voided' || this.data.isRealAdmin }, this).map(function (item) { return item.value })
+      next = swipe.adjacent(values, this.data.currentFilter, gesture.direction)
+      if (next) this.selectFilter({ currentTarget: { dataset: { status: next } } })
+    } else if (gesture.scope === 'page') {
+      next = swipe.adjacent(swipe.adminTabs(this.data.role), this.data.activeTab, gesture.direction)
+      if (next) this.switchTab({ currentTarget: { dataset: { tab: next } } })
+    }
+  },
+
   selectFilter: function (event) {
     this.setData({
       currentFilter: event.currentTarget.dataset.status
@@ -282,6 +335,8 @@ Page(assignmentUI.withPage(Object.assign({
 
   switchTab: function (event) {
     var tab = event.currentTarget.dataset.tab
+    if (swipe.adminTabs(this.data.role).indexOf(tab) < 0 || tab === this.data.activeTab) return
+    swipe.cancel(this)
     this.setData({
       activeTab: tab
     })
@@ -409,7 +464,8 @@ Page(assignmentUI.withPage(Object.assign({
     var table = this.data.memberDepartmentFilter
     if (!this.data.memberDepartmentFilters.some(function (tab) { return tab.value === table })) table = 'all'
     var list = table === 'all' ? this.data.members : this.data.members.filter(function (m) { return 'department:' + (m.department || '') === table })
-    this.setData({ memberDepartmentFilter: table, directoryMembers: list })
+    var index = this.data.memberDepartmentFilters.findIndex(function (tab) { return tab.value === table })
+    this.setData({ memberDepartmentFilter: table, directoryMembers: list, memberDepartmentAnchor: 'member-filter-' + Math.max(0, index) })
   },
 
   selectMemberDepartment: function (event) {
@@ -576,6 +632,32 @@ Page(assignmentUI.withPage(Object.assign({
       })
   },
 
+  runCardPrimary: function (event) {
+    var id = event.currentTarget.dataset.id, item = this.data.allItems.find(function (x) { return x.id === id })
+    if (!item || !this._chatVisible || this._statusBusy || this._adminActionBusy || this.data.assignDialogVisible) return
+    var action = cardPrimary(item, this.data.role, this.data.isRealAdmin)
+    if (action && !action.disabled) this[action.handler]({ currentTarget: { dataset: { id: id, status: action.status } } })
+  },
+  openCardMenu: function (event) {
+    var id = event.currentTarget.dataset.id, item = this.data.allItems.find(function (x) { return x.id === id })
+    if (!item || !this._chatVisible || this._statusBusy || this._adminActionBusy || this.data.assignDialogVisible) return
+    this._cardMenu = { id: id, identity: this.chatViewerIdentity(), version: this._chatVisibilityVersion, snapshot: cardSnapshot(item) }
+    this.setData({ cardMenuVisible: true, cardMenuActions: cardOptions(item, this.data.role, this.data.isRealAdmin) })
+  },
+  closeCardMenu: function () { this._cardMenu = null; this.setData({ cardMenuVisible: false, cardMenuActions: [] }) },
+  selectCardAction: function (event) {
+    var context = this._cardMenu, action = this.data.cardMenuActions[Number(event.currentTarget.dataset.index)]
+    var item = context && this.data.allItems.find(function (x) { return x.id === context.id })
+    var valid = action && item && this._chatVisible && context.version === this._chatVisibilityVersion && context.identity === this.chatViewerIdentity() && context.snapshot === cardSnapshot(item) && !this._statusBusy && !this._adminActionBusy
+    if (valid) valid = cardOptions(item, this.data.role, this.data.isRealAdmin).some(function (x) { return x.handler === action.handler && x.status === action.status })
+    this.closeCardMenu()
+    if (valid) this[action.handler]({ currentTarget: { dataset: { id: item.id, status: action.status } } })
+    else wx.showToast({ title: '预约状态已变化，请重新选择', icon: 'none' })
+  },
+  toggleQuickReply: function (event) {
+    var id = event.currentTarget.dataset.id, expanded = Object.assign({}, this.data.expandedReplies)
+    expanded[id] = !expanded[id]; this.setData({ expandedReplies: expanded })
+  },
   forceStatus: adminActions.forceStatus,
   forceComplete: adminActions.forceComplete,
   voidAppointment: adminActions.voidAppointment,

@@ -1,4 +1,4 @@
-<view class="page admin-page">
+<view class="page admin-page" bindtouchstart="onNavigationTouchStart" bindtouchmove="onNavigationTouchMove" bindtouchend="onNavigationTouchEnd" bindtouchcancel="onNavigationTouchCancel">
   <view class="admin-head">
     <view class="admin-title">社团后台</view>
     <view class="admin-count">预约与社团事务</view>
@@ -14,16 +14,17 @@
     <view class="notification-meta" wx:if="{{notificationActive && notificationType === 'once'}}">已登记 {{notificationClaims}} 次授权，实际可发送次数以微信为准。</view>
     <view class="notification-meta" wx:if="{{notificationLastDelivery}}">{{notificationLastDelivery}}</view>
     <view class="notification-actions">
-      <button wx:if="{{notificationReady && !notificationNeedsLogin && !notificationNeedsSettings && !notificationCanRetry}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy || notificationLoading || !notificationCanSubscribe}}" bindtap="subscribeNotifications">{{notificationType === 'once' ? '订阅一次提醒' : '开启预约提醒'}}</button>
-      <button wx:if="{{notificationNeedsLogin}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy}}" bindtap="reloginNotifications">重新登录</button>
-      <button wx:if="{{notificationCanRetry}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy}}" bindtap="savePendingNotificationSubscription">重试登记</button>
-      <button wx:if="{{notificationNeedsSettings}}" class="mini-button" disabled="{{notificationBusy}}" bindtap="openNotificationSettings">订阅设置</button>
-      <button wx:if="{{!notificationNeedsLogin}}" class="mini-button detail-button" disabled="{{notificationBusy || notificationLoading}}" bindtap="loadNotificationStatus">刷新状态</button>
-      <button wx:if="{{notificationActive}}" class="notification-stop" disabled="{{notificationBusy}}" bindtap="stopNotifications">暂停提醒</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{notificationReady && !notificationNeedsLogin && !notificationNeedsSettings && !notificationCanRetry}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy || notificationLoading || !notificationCanSubscribe}}" bindtap="subscribeNotifications">{{notificationType === 'once' ? '订阅一次提醒' : '开启预约提醒'}}</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{notificationNeedsLogin}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy}}" bindtap="reloginNotifications">重新登录</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{notificationCanRetry}}" class="mini-button" loading="{{notificationBusy}}" disabled="{{notificationBusy}}" bindtap="savePendingNotificationSubscription">重试登记</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{notificationNeedsSettings}}" class="mini-button" disabled="{{notificationBusy}}" bindtap="openNotificationSettings">订阅设置</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{!notificationNeedsLogin}}" class="mini-button detail-button" disabled="{{notificationBusy || notificationLoading}}" bindtap="loadNotificationStatus">刷新状态</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{notificationActive}}" class="notification-stop" disabled="{{notificationBusy}}" bindtap="stopNotifications">暂停提醒</button>
     </view>
     <view class="notification-footnote">通知会出现在微信“服务通知”中。退出小程序后仍可发送；锁屏提示需在手机和微信中开启通知。</view>
   </view>
 
+  <view class="navigation-hint">左右滑动顶部或栏目栏切换栏目</view>
   <!-- Tab 切换栏 -->
   <view class="tab-bar">
     <view class="tab-item {{activeTab === 'appointments' ? 'tab-active' : ''}}" data-tab="appointments" bindtap="switchTab">预约处理</view>
@@ -43,7 +44,8 @@
 
 
   <!-- ========== Tab 1: 预约处理 ========== -->
-  <block wx:if="{{activeTab === 'appointments'}}">
+  <view wx:if="{{activeTab === 'appointments'}}" class="swipe-list-area" data-swipe-scope="statuses" bindtouchstart="onNavigationTouchStart">
+    <view class="navigation-hint">左右滑动预约列表切换状态，也可点击状态</view>
     <view class="stats-grid">
       <view class="stat-card">
         <view class="stat-value">{{stats.total}}</view>
@@ -59,16 +61,16 @@
       </view>
     </view>
 
-    <scroll-view class="filter-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
+    <scroll-view data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="filter-scroll" scroll-x="true" enhanced="true" show-scrollbar="false" scroll-into-view="status-filter-{{currentFilter}}" scroll-with-animation="true">
       <view class="filter-row">
-        <view class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}" wx:for="{{filters}}" wx:if="{{item.value !== 'voided' || isRealAdmin}}" wx:key="value" data-status="{{item.value}}" bindtap="selectFilter">{{item.label}} {{item.count}}</view>
+        <view id="status-filter-{{item.value}}" class="filter-chip {{currentFilter === item.value ? 'filter-chip-active' : ''}}" wx:for="{{filters}}" wx:if="{{item.value !== 'voided' || isRealAdmin}}" wx:key="value" data-status="{{item.value}}" bindtap="selectFilter">{{item.label}} {{item.count}}</view>
       </view>
     </scroll-view>
 
     <view class="card list-state" wx:if="{{itemsLoading}}">正在加载预约…</view>
     <view class="card list-state list-error" wx:elif="{{itemsError}}">
       <view>预约加载失败，请检查网络后重试。</view>
-      <button class="mini-button detail-button" bindtap="loadItems">重新加载</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="mini-button detail-button" bindtap="loadItems">重新加载</button>
     </view>
     <view wx:elif="{{items.length}}">
       <view class="card admin-card" wx:for="{{items}}" wx:key="id">
@@ -90,10 +92,13 @@
             <image wx:if="{{item.latestMessage.type === 'image'}}" class="reply-preview-image" src="{{item.latestMessage.imageUrl}}" mode="widthFix" data-url="{{item.latestMessage.imageUrl}}" bindtap="previewReplyImage" />
             <text wx:else class="reply-existing-content">{{item.latestMessage.content}}</text>
           </view>
-          <textarea class="reply-input" placeholder="快速回复，发送后进入沟通记录" maxlength="30" value="{{draftReplies[item.id]}}" data-id="{{item.id}}" bindinput="onReplyInput" />
-          <view class="reply-actions">
-            <button class="mini-button reply-button" data-id="{{item.id}}" bindtap="submitReply">发送</button>
-            <button class="mini-button detail-button reply-button" data-id="{{item.id}}" bindtap="goChat">完整对话</button>
+          <view class="reply-entry-actions">
+            <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="reply-link" data-id="{{item.id}}" bindtap="toggleQuickReply">{{expandedReplies[item.id] ? '收起回复' : '快速回复'}}</button>
+            <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="reply-link" data-id="{{item.id}}" bindtap="goChat">进入沟通 ›</button>
+          </view>
+          <view wx:if="{{expandedReplies[item.id]}}">
+            <textarea data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="reply-input" placeholder="输入回复内容" maxlength="30" value="{{draftReplies[item.id]}}" data-id="{{item.id}}" bindinput="onReplyInput" />
+            <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="quick-send" data-id="{{item.id}}" bindtap="submitReply">发送回复</button>
           </view>
         </view>
 
@@ -102,18 +107,10 @@
         </view>
 
         <view wx:if="{{item.isVoided}}" class="void-reason">作废原因：{{item.voidReason}}</view>
-        <view class="admin-actions">
-          <button class="mini-button detail-button" data-id="{{item.id}}" bindtap="goDetail">详情</button>
-          <button wx:if="{{!item.canReply && item.canChat !== false}}" class="mini-button detail-button" data-id="{{item.id}}" bindtap="goChat">{{item._messagesFailed ? '重试沟通' : '历史沟通'}}</button>
-          <button wx:if="{{isRealAdmin && item.isVoided}}" class="mini-button confirm-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="restoreAppointment">恢复预约</button>
-          <button wx:if="{{isRealAdmin && !item.isVoided}}" class="mini-button special-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="forceStatus">强制改状态</button>
-          <button wx:if="{{isRealAdmin && !item.isVoided && item.status !== 'completed'}}" class="mini-button special-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="forceComplete">强制完成</button>
-          <button wx:if="{{isRealAdmin && !item.isVoided}}" class="mini-button cancel-button" disabled="{{adminActionBusy}}" data-id="{{item.id}}" bindtap="voidAppointment">作废隐藏</button>
-          <button class="mini-button confirm-button" wx:if="{{!item.isVoided && item.status === 'pending'}}" disabled="{{statusBusy || item.assignedActiveCount < 1}}" data-id="{{item.id}}" data-status="accepted" bindtap="changeStatus">{{item.assignedActiveCount < 1 ? '请先分配人员' : '确认预约'}}</button>
-          <button class="mini-button" wx:if="{{!item.isVoided && item.status === 'accepted'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="repairing" bindtap="changeStatus">开始维修</button>
-          <button class="mini-button complete-button" wx:if="{{!item.isVoided && item.status === 'repairing'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="completed" bindtap="changeStatus">完成</button>
-          <button class="mini-button cancel-button" wx:if="{{!item.isVoided && item.status !== 'completed' && item.status !== 'cancelled'}}" disabled="{{statusBusy}}" data-id="{{item.id}}" data-status="cancelled" bindtap="changeStatus">取消</button>
-          <button class="mini-button" wx:if="{{!item.isVoided && (role === 'admin' || role === 'leader') && item.status !== 'completed' && item.status !== 'cancelled'}}" data-id="{{item.id}}" bindtap="showAssign">分配</button>
+        <view class="admin-actions compact-actions">
+          <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="card-text-action" data-id="{{item.id}}" bindtap="goDetail">查看详情</button>
+          <button wx:if="{{item.cardHasMore}}" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="card-text-action" data-id="{{item.id}}" bindtap="openCardMenu">更多 ⋯</button>
+          <button wx:if="{{item.cardPrimary}}" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="card-primary-action" disabled="{{item.cardPrimary.disabled || statusBusy || adminActionBusy}}" data-id="{{item.id}}" bindtap="runCardPrimary">{{item.cardPrimary.label}}</button>
         </view>
       </view>
     </view>
@@ -123,14 +120,14 @@
       <text class="empty-title">当前筛选下暂无预约</text>
       <text class="muted">可以切换上方状态；有新的预约后会显示在这里</text>
     </view>
-  </block>
+  </view>
 
   <!-- ========== Tab 2: 邀请码管理 ========== -->
   <block wx:if="{{activeTab === 'invite'}}">
     <view class="card invite-action-card">
       <view class="invite-action-title">邀请码用于让其他人申请加入社团</view>
       <view class="invite-action-desc">生成后 5 分钟内有效，且只能使用一次，请尽快通过微信私下发给被邀请的人。</view>
-      <button class="primary-button generate-button" bindtap="createInviteCode">+ 生成新邀请码</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="primary-button generate-button" bindtap="createInviteCode">+ 生成新邀请码</button>
     </view>
 
     <view wx:if="{{inviteCodes.length}}">
@@ -143,7 +140,7 @@
         <view class="invite-meta" wx:if="{{item.expires_at}}">过期：{{item.expires_at}}</view>
         <view class="invite-meta" wx:if="{{item.used_at}}">使用时间：{{item.used_at}}</view>
         <view class="invite-meta" wx:if="{{item.used_by}}">使用者：{{item.used_by}}</view>
-        <button class="mini-button detail-button copy-btn" data-code="{{item.code}}" bindtap="copyCode">复制码</button>
+        <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="mini-button detail-button copy-btn" data-code="{{item.code}}" bindtap="copyCode">复制码</button>
       </view>
     </view>
 
@@ -170,8 +167,8 @@
         <view class="apply-meta" wx:if="{{item.reviewed_at}}">审核时间：{{item.reviewed_at}}</view>
 
         <view class="apply-actions" wx:if="{{!item.isVoided && item.status === 'pending'}}">
-          <button class="mini-button confirm-button" data-id="{{item.id}}" data-action="approve" data-name="{{item.name}}" bindtap="reviewApplication">同意</button>
-          <button class="mini-button cancel-button" data-id="{{item.id}}" data-action="reject" data-name="{{item.name}}" bindtap="reviewApplication">拒绝</button>
+          <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="mini-button confirm-button" data-id="{{item.id}}" data-action="approve" data-name="{{item.name}}" bindtap="reviewApplication">同意</button>
+          <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="mini-button cancel-button" data-id="{{item.id}}" data-action="reject" data-name="{{item.name}}" bindtap="reviewApplication">拒绝</button>
         </view>
       </view>
     </view>
@@ -184,18 +181,19 @@
   </block>
 
   <!-- 成员表：资料在独立详情页中维护，修改须提交申请。 -->
-  <block wx:if="{{activeTab === 'members'}}">
+  <view wx:if="{{activeTab === 'members'}}" class="swipe-list-area" data-swipe-scope="members" bindtouchstart="onNavigationTouchStart">
+    <view class="navigation-hint">左右滑动成员列表切换部门；顶部切换后台栏目</view>
     <view class="card member-summary-card">
-      <view class="member-summary-top"><view class="notification-title">社团成员表</view><button class="member-refresh" disabled="{{membersLoading}}" bindtap="loadMembers">刷新</button></view>
+      <view class="member-summary-top"><view class="notification-title">社团成员表</view><button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="member-refresh" disabled="{{membersLoading}}" bindtap="loadMembers">刷新</button></view>
       <view class="member-meta">可见成员共 {{memberStats.total}} 人。自己的资料排在所在表的首位。</view>
       <view class="member-meta">点姓名查看详情。成员本人修改需审核，负责人和管理员按权限维护资料。</view>
       <view class="member-meta">管理员 admin · 负责人 leader · 成员 member</view>
-      <button wx:if="{{role === 'admin' || role === 'leader'}}" class="mini-button detail-button" bindtap="goProfileReviews">资料修改审核</button>
-      <button wx:if="{{role === 'admin' || role === 'leader'}}" class="mini-button detail-button" bindtap="goRemovalRequests">{{role === 'admin' ? '成员移出审核' : '我的移出申请'}}</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{role === 'admin' || role === 'leader'}}" class="mini-button detail-button" bindtap="goProfileReviews">资料修改审核</button>
+      <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{role === 'admin' || role === 'leader'}}" class="mini-button detail-button" bindtap="goRemovalRequests">{{role === 'admin' ? '成员移出审核' : '我的移出申请'}}</button>
     </view>
-    <scroll-view class="filter-scroll directory-tabs" scroll-x="true" show-scrollbar="false"><view class="filter-row"><view wx:for="{{memberDepartmentFilters}}" wx:key="value" class="filter-chip {{memberDepartmentFilter === item.value ? 'filter-chip-active' : ''}}" data-department="{{item.value}}" bindtap="selectMemberDepartment">{{item.label}} {{item.count}}</view></view></scroll-view>
+    <scroll-view data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="filter-scroll directory-tabs" scroll-x="true" show-scrollbar="false" scroll-into-view="{{memberDepartmentAnchor}}" scroll-with-animation="true"><view class="filter-row"><view id="member-filter-{{index}}" wx:for="{{memberDepartmentFilters}}" wx:key="value" class="filter-chip {{memberDepartmentFilter === item.value ? 'filter-chip-active' : ''}}" data-department="{{item.value}}" bindtap="selectMemberDepartment">{{item.label}} {{item.count}}</view></view></scroll-view>
     <view wx:if="{{membersLoading}}" class="member-load-note">正在加载成员表…</view>
-    <view wx:if="{{membersError}}" class="card profile-error"><view>{{membersErrorText}}</view><button wx:if="{{membersNeedLogin}}" class="mini-button" bindtap="reloginMembers">重新微信登录</button></view>
+    <view wx:if="{{membersError}}" class="card profile-error"><view>{{membersErrorText}}</view><button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:if="{{membersNeedLogin}}" class="mini-button" bindtap="reloginMembers">重新微信登录</button></view>
     <view wx:if="{{directoryMembers.length}}" class="card directory-list">
       <view wx:for="{{directoryMembers}}" wx:key="openid" class="directory-row" data-openid="{{item.openid}}" bindtap="goMemberDetail">
         <view class="directory-name-row"><text class="member-role-pill role-{{item.role}}">{{item.roleText}}</text><text class="directory-name">{{item.name || item.nickname || '未填写姓名'}}</text><text wx:if="{{item.isSelf}}" class="directory-self">我</text><text class="directory-arrow">›</text></view>
@@ -204,10 +202,18 @@
       </view>
     </view>
     <view wx:elif="{{!membersLoading && !membersError}}" class="card empty-state"><text class="empty-title">这张表暂时没有成员</text><text class="muted">可切换其他成员表查看</text></view>
-  </block>
+  </view>
+
+  <view wx:if="{{cardMenuVisible}}" class="card-menu-mask" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" bindtap="closeCardMenu">
+    <view class="card-menu-sheet" catchtap="stopPropagation">
+      <view class="card-menu-title">预约操作</view>
+      <button wx:for="{{cardMenuActions}}" wx:key="handler" class="card-menu-option {{item.danger ? 'card-menu-danger' : ''}}" data-index="{{index}}" bindtap="selectCardAction">{{item.label}}</button>
+      <button class="card-menu-cancel" bindtap="closeCardMenu">收起</button>
+    </view>
+  </view>
 
   <!-- 分配预约弹窗 -->
-  <view class="assign-mask" wx:if="{{assignDialogVisible}}" bindtap="hideAssignDialog">
+  <view data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="assign-mask" wx:if="{{assignDialogVisible}}" bindtap="hideAssignDialog">
     <view class="assign-dialog" catchtap="stopPropagation">
       <view class="assign-title">分配预约</view>
       <view class="assign-hint">选择1名主负责人，可另选最多2名随行人员</view>
@@ -221,30 +227,30 @@
         <view wx:for="{{assignAssistantPreviews}}" wx:key="openid" class="assign-selection {{item.unavailable ? 'assign-unavailable' : ''}}">
           <text class="assign-selection-role">随行{{index + 1}}</text>
           <view class="assign-selection-person"><text>{{item.name}}</text><text class="assign-meta">{{item.department}} {{item.roleText}}</text></view>
-          <button class="assign-remove" data-openid="{{item.openid}}" bindtap="toggleAssignmentAssistant" disabled="{{assignLoading || assignSaving || assignConfirming}}">移除</button>
+          <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="assign-remove" data-openid="{{item.openid}}" bindtap="toggleAssignmentAssistant" disabled="{{assignLoading || assignSaving || assignConfirming}}">移除</button>
         </view>
         <view wx:if="{{!assignAssistantPreviews.length}}" class="assign-selection assign-meta">随行人员：未选择（可不选）</view>
       </view>
-      <scroll-view scroll-x class="assign-tabs">
+      <scroll-view data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" scroll-x class="assign-tabs">
         <view wx:for="{{assignDepartmentTabs}}" wx:key="value" data-department="{{item.value}}" bindtap="selectAssignmentDepartment" class="assign-tab {{assignDepartmentFilter === item.value ? 'assign-tab-active' : ''}}">{{item.label}} {{item.count}}</view>
       </scroll-view>
       <view wx:if="{{assignError}}" class="assign-error">{{assignError}}</view>
       <view wx:if="{{assignLoading}}" class="assign-state">正在加载可选人员…</view>
-      <view wx:elif="{{!assignLoaded}}" class="assign-state"><button class="assign-retry" bindtap="loadAssignableMembers">重新加载人员</button></view>
-      <scroll-view wx:else scroll-y class="assign-members">
+      <view wx:elif="{{!assignLoaded}}" class="assign-state"><button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="assign-retry" bindtap="loadAssignableMembers">重新加载人员</button></view>
+      <scroll-view data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" wx:else scroll-y class="assign-members">
         <view wx:for="{{assignVisibleMembers}}" wx:key="openid" class="assign-member">
           <view class="assign-member-heading"><text class="assign-role">{{item.roleText}}</text><text class="assign-member-name">{{item.displayName}}</text></view>
           <view class="assign-meta">{{item.department || '未分配部门（仅可随行）'}}</view>
           <view class="assign-person-actions">
-            <button class="assign-person-button {{item.isPrimary ? 'assign-selected' : ''}}" data-openid="{{item.openid}}" bindtap="selectAssignmentPrimary" disabled="{{assignSaving || assignConfirming || item.primaryDisabled}}">{{item.isPrimary ? '已选主负责人' : '选为主负责人'}}</button>
-            <button class="assign-person-button {{item.isAssistant ? 'assign-selected' : ''}}" data-openid="{{item.openid}}" bindtap="toggleAssignmentAssistant" disabled="{{assignSaving || assignConfirming || item.assistantDisabled}}">{{item.isAssistant ? '取消随行' : '选为随行'}}</button>
+            <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="assign-person-button {{item.isPrimary ? 'assign-selected' : ''}}" data-openid="{{item.openid}}" bindtap="selectAssignmentPrimary" disabled="{{assignSaving || assignConfirming || item.primaryDisabled}}">{{item.isPrimary ? '已选主负责人' : '选为主负责人'}}</button>
+            <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="assign-person-button {{item.isAssistant ? 'assign-selected' : ''}}" data-openid="{{item.openid}}" bindtap="toggleAssignmentAssistant" disabled="{{assignSaving || assignConfirming || item.assistantDisabled}}">{{item.isAssistant ? '取消随行' : '选为随行'}}</button>
           </view>
         </view>
         <view wx:if="{{!assignVisibleMembers.length}}" class="assign-state">这个部门暂无可选人员</view>
       </scroll-view>
       <view class="assign-actions">
-        <button class="mini-button cancel-button" bindtap="hideAssignDialog" disabled="{{assignSaving}}">取消</button>
-        <button class="mini-button confirm-button" bindtap="confirmAssign" loading="{{assignSaving}}" disabled="{{assignLoading || !assignLoaded || !assignPrimaryOpenid || assignSaving || assignConfirming}}">{{assignSaving ? '保存中' : '确认分配'}}</button>
+        <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="mini-button cancel-button" bindtap="hideAssignDialog" disabled="{{assignSaving}}">取消</button>
+        <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="mini-button confirm-button" bindtap="confirmAssign" loading="{{assignSaving}}" disabled="{{assignLoading || !assignLoaded || !assignPrimaryOpenid || assignSaving || assignConfirming}}">{{assignSaving ? '保存中' : '确认分配'}}</button>
       </view>
     </view>
   </view>

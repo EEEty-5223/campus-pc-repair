@@ -14,7 +14,7 @@ test('fetch failure rejects overview instead of replacing unread total with zero
 test('home badge updates, survives network failure and discards result after hiding',async()=>{
  const {unread:u}=fixture();const app={globalData:{openid:'a',isAdmin:false}};let failure=false,resolvePending,delayed=false;
  const api={getMyAppointments:async()=>({list:[{id:'p'}]}),getMessages:()=>failure?Promise.reject(Error('network')):delayed?new Promise(r=>resolvePending=r):Promise.resolve({list:[{id:'1',from:'admin'},{id:'2',from:'admin'}]})};
- let page;vm.runInNewContext(fs.readFileSync(path.join(root,'pages/index/index.js'),'utf8'),{Page:v=>page=v,getApp:()=>app,require:n=>n.includes('api-request')?api:n.includes('chat-unread')?u:{},wx:{},Promise,setInterval:()=>1,clearInterval(){},console});page.data=JSON.parse(JSON.stringify(page.data));page.setData=p=>Object.assign(page.data,p);page._homeVisible=true;
+ let page;vm.runInNewContext(fs.readFileSync(path.join(root,'pages/index/index.js'),'utf8'),{Page:v=>page=v,getApp:()=>app,require:n=>n.includes('api-request')?api:n.includes('chat-unread')?u:n.includes('swipe-navigation')?require('../utils/swipe-navigation'):{},wx:{},Promise,setInterval:()=>1,clearInterval(){},console});page.data=JSON.parse(JSON.stringify(page.data));page.setData=p=>Object.assign(page.data,p);page._homeVisible=true;
  await page.refreshUnread();assert.equal(page.data.unreadCount,2);failure=true;await page.refreshUnread();assert.equal(page.data.unreadCount,2);assert.equal(page.data.unreadError,true);
  failure=false;delayed=true;const pending=page.refreshUnread();await new Promise(r=>setImmediate(r));page.onHide();resolvePending({list:[{id:'3',from:'admin'}]});await pending;assert.equal(page.data.unreadCount,2);
 });

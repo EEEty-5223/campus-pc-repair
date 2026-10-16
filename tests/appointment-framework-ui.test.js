@@ -25,7 +25,8 @@ test('chat uses authenticated sender identity, named teammates and structured as
   { id: '2', from: 'admin', senderOpenid: 'staff-b', senderName: '随行同学', kind: 'normal', content: '同事消息' },
   { id: '3', from: 'admin', senderOpenid: 'admin', senderName: '胡桃', kind: 'admin_notice', content: '协调安排' },
   { id: '4', from: 'admin', kind: 'assignment_notice', content: '服务人员已调整', assignmentPeople: [{ openid: 'staff-b', phone: '13800000000' }] },
-  { id: '5', from: 'user', senderOpenid: 'owner', kind: 'normal', content: '人员分配通知' }
+  { id: '5', from: 'user', senderOpenid: 'owner', kind: 'normal', content: '人员分配通知' },
+  { id: '6', from: 'admin', senderOpenid: 'admin', kind: 'admin_intervention', content: '管理员介入：跳过开工码' }
  ]
  const api = { getAppointment: async () => ({ item: { id: 'p', status: 'repairing' } }), getMessages: async () => ({ list: messages, canReply: false }) }
  const definition = run('pages/chat/chat.js', { getApp: () => ({ globalData: user }), require: n => n.includes('api-request') ? api : n.includes('chat-unread') ? { markRead() {} } : require(path.join(root, 'utils/appointments')), wx: { setClipboardData: x => { copied.push(x.data); x.success() }, showToast() {} } })
@@ -33,6 +34,7 @@ test('chat uses authenticated sender identity, named teammates and structured as
  await page.loadItem(); const result = page.data.item.messages
  assert.equal(result[0].viewerClass, 'msg-own'); assert.equal(result[1].viewerClass, 'msg-other'); assert.equal(result[1].fromText, '随行同学')
  assert.equal(result[2].viewerClass, 'msg-admin-notice'); assert.equal(result[3].isAssignmentNotice, true); assert.equal(result[4].isAssignmentNotice, false); assert.equal(page.data.item.canReply, false)
+ assert.equal(result[5].viewerClass,'msg-admin-notice');assert.equal(result[5].isAdminNotice,true)
  page.copyPhone({ currentTarget: { dataset: { phone: '138 0000 0000' } } }); assert.deepEqual(copied, ['13800000000'])
 })
 

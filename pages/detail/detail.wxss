@@ -301,3 +301,10 @@
 
 .service-person {padding:24rpx 0;border-bottom:1rpx solid #edf1f7}.service-person:last-child{border-bottom:0}.service-person-head,.service-phone-row{display:flex;align-items:center;gap:16rpx}.service-person-name{font-size:29rpx;font-weight:600;color:#1e293b}.service-position{font-size:21rpx;padding:5rpx 12rpx;border-radius:8rpx;background:#eff6ff;color:#2563eb}.service-department{margin:12rpx 0;color:#64748b;font-size:24rpx}.service-phone-row{justify-content:space-between;color:#334155;font-size:27rpx}.phone-copy{width:auto!important;margin:0;padding:0 22rpx;line-height:54rpx;font-size:24rpx;color:#2563eb;background:#eff6ff}.void-note{color:#9f1239;background:#fff1f2;font-size:26rpx;line-height:1.8;padding:24rpx}.admin-special-actions button{margin-top:18rpx}.detail-actions{flex-wrap:wrap}
 .service-person-head{flex-wrap:wrap}.service-position,.phone-copy{flex-shrink:0}.service-person-name,.service-department,.void-note{word-break:break-all}.service-phone-row text{min-width:0;word-break:break-all}
+
+.intervention-banner { padding: 20rpx 24rpx; background: #f1f5f9; color: #475569; font-size: 25rpx; }
+.history-entry { border-left: 4rpx solid #dbeafe; padding: 4rpx 0 26rpx 24rpx; margin-left: 8rpx; }
+.history-title { font-weight: 600; font-size: 28rpx; }
+.history-meta { color: #64748b; font-size: 24rpx; margin-top: 8rpx; }
+.history-intervention { border-color: #94a3b8; background: #f8fafc; }
+.history-reason { color: #475569; font-size: 25rpx; margin-top: 10rpx; word-break: break-all; }

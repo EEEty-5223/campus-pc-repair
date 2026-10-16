@@ -44,6 +44,7 @@ function decorate(item) {
   var copy = Object.assign({}, item)
   copy.statusText = copy.isVoided ? '已作废' : (STATUS_LABELS[copy.status] || '未知状态')
   copy.statusClass = 'status-' + (copy.isVoided ? 'cancelled' : copy.status)
+  copy.repairHistory = (copy.repairHistory || []).map(function (event) { return Object.assign({}, event, { atText: event.at && !isNaN(new Date(event.at).getTime()) ? formatDateTime(event.at) : '历史未记录时间' }) })
   copy.canEdit = !copy.isVoided && copy.status === 'pending'
   copy.canCancel = !copy.isVoided && copy.status === 'pending'
   copy.messages = normalizeMessages(copy).map(function (msg) {

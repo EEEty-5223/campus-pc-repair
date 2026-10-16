@@ -75,7 +75,7 @@ Page({
       if (!current() || !item) return
       var decorated = appointments.decorate ? appointments.decorate(item) : item
       decorated.messages = (decorated.messages || []).map(function (message) {
-        var notice = message.kind === 'assignment_notice', adminNotice = message.kind === 'admin_notice'
+        var notice = message.kind === 'assignment_notice', adminNotice = message.kind === 'admin_notice' || message.kind === 'admin_intervention'
         var own = message.senderOpenid ? message.senderOpenid === openid : message.from === self.data.role
         var label = message.senderName || (message.from === 'admin' ? '社团成员' : (self.data.role === 'admin' ? '预约用户' : '我'))
         return Object.assign({}, message, { viewerClass: notice ? 'msg-assignment' : (adminNotice ? 'msg-admin-notice' : (own ? 'msg-own' : 'msg-other')), fromText: notice ? '人员分配通知' : label, isAssignmentNotice: notice, isAdminNotice: adminNotice })

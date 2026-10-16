@@ -15,7 +15,7 @@ function fixture(options={}) {
     request:o=>{calls.requests.push(o);if(o.url.endsWith('/api/login')){
       if(options.networkFail)return o.fail({errMsg:'timeout'});
       o.success({statusCode:options.statusCode||200,data:options.response||user});
-    }else o.success({statusCode:200,data:{ok:true,list:[]}});}
+    }else o.success({statusCode:200,data:options.apiResponse||{ok:true,list:[]}});}
   };
   const module={exports:{}};
   const consoleStub={log(){},warn(){},error(){}};
@@ -46,6 +46,20 @@ for(const role of ['admin','leader','member'])test('devtools authenticates '+rol
   await f.api.silentLogin({requireReal:true});assert.equal(f.calls.login,3);
 });
 test('actual phone still authenticates through same backend',async()=>{const f=fixture({platform:'ios',role:'admin'});assert.equal((await f.api.silentLogin()).role,'admin');assert.equal(f.calls.login,1);});
+
+test('start and completion actions send separate signed code fields and owner route',async()=>{
+ const f=fixture();f.app.onLaunch();await f.app.globalData.loginReady;
+ await f.api.updateStatus('a','repairing','0017');let request=f.calls.requests.at(-1);assert.equal(request.data.startCode,'0017');assert.equal(request.data.completionCode,undefined);assert.equal(request.header.Authorization,'Bearer signed-test-session');
+ await f.api.updateStatus('a','completed','0037');request=f.calls.requests.at(-1);assert.equal(request.data.completionCode,'0037');assert.equal(request.data.startCode,undefined);
+ await f.api.getStartCode('a');assert.match(f.calls.requests.at(-1).url,/appointments\/a\/start-code$/);
+});
+
+test('API preserves task permissions, repair logs and intervention notice without exposing normal actions',async()=>{
+ const f=fixture({apiResponse:{ok:true,item:{id:'a',status:'repairing',canProcess:false,canAssign:true,adminIntervened:true,repairHistory:[{id:'1',title:'管理员介入',at:'2026-10-16T01:00:00Z',isIntervention:true}]},list:[{id:1,kind:'admin_intervention',from_role:'admin',content:'管理员介入'}]}});
+ f.app.onLaunch();await f.app.globalData.loginReady;
+ const detail=await f.api.getAppointment('a');assert.equal(detail.item.canProcess,false);assert.equal(detail.item.canAssign,true);assert.equal(detail.item.repairHistory[0].isIntervention,true);assert.equal(detail.item.adminIntervened,true);
+ const messages=await f.api.getMessages('a');assert.equal(messages.list[0].kind,'admin_intervention');
+});
 
 for(const platform of ['ios','android'])for(const envVersion of ['develop','trial','release'])test('phone '+platform+' '+envVersion+' login and booking always use public server',async()=>{
   const f=fixture({platform,envVersion,role:'admin'});

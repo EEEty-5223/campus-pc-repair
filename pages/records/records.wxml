@@ -1,12 +1,15 @@
-<view class="page records-page">
+<view class="page records-page" bindtouchstart="onNavigationTouchStart" bindtouchmove="onNavigationTouchMove" bindtouchend="onNavigationTouchEnd" bindtouchcancel="onNavigationTouchCancel">
+  <view class="navigation-hint">‹ 顶部右滑返回首页</view>
   <view class="records-head">
     <view>
       <view class="records-title">我的预约（点击查看详细可以对话）</view>
       <view class="records-subtitle">共 {{items.length}} 条本机记录</view>
     </view>
-    <button class="new-button" bindtap="goBooking">+ 新预约</button>
+    <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="new-button" bindtap="goBooking">+ 新预约</button>
   </view>
 
+  <view class="swipe-list-area" data-swipe-scope="records" bindtouchstart="onNavigationTouchStart">
+  <view class="navigation-hint">左右滑动列表切换分类，也可点击分类</view>
   <view class="record-filters">
     <view
       class="record-filter {{currentFilter === item.value ? 'record-filter-active' : ''}}"
@@ -40,6 +43,7 @@
     <text class="empty-icon">🧰</text>
     <text class="empty-title">当前分类暂无预约</text>
     <text class="muted">切换分类，或提交一条新的维修预约</text>
-    <button class="primary-button empty-button" bindtap="goBooking">预约电脑维修</button>
+    <button data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" class="primary-button empty-button" bindtap="goBooking">预约电脑维修</button>
+  </view>
   </view>
 </view>

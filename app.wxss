@@ -118,3 +118,8 @@ button::after {
   font-size: 32rpx;
   font-weight: 700;
 }
+
+
+/* 横向切换提示；列表空态也保留足够的手势区域。 */
+.navigation-hint { color: #64748b; font-size: 23rpx; line-height: 1.7; margin: 0 0 16rpx; }
+.swipe-list-area { min-height: 55vh; }

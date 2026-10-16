@@ -1,6 +1,7 @@
 var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
 var unread = require('../../utils/chat-unread')
+var swipe = require('../../utils/swipe-navigation')
 var USE_BACKEND = true
 
 Page({
@@ -23,6 +24,14 @@ Page({
       { number: '2', title: '社团确认', desc: '确认后回复并预约成功' },
       { number: '3', title: '到场处理', desc: '检测后再确认维修' }
     ]
+  },
+
+  onNavigationTouchStart: function (event) { swipe.start(this, event) },
+  onNavigationTouchMove: function (event) { swipe.move(this, event) },
+  onNavigationTouchCancel: function () { swipe.cancel(this) },
+  onNavigationTouchEnd: function (event) {
+    var gesture = swipe.end(this, event)
+    if (gesture && gesture.direction === 'left') swipe.switchMainTab(this, '/pages/records/records')
   },
 
   onShow: function () {
@@ -54,7 +63,7 @@ Page({
     }
   },
 
-  onHide: function () { this._homeVisible = false; this._homeEpoch = (this._homeEpoch || 0) + 1; this._unreadRequest = (this._unreadRequest || 0) + 1; this.stopUnreadPolling() },
+  onHide: function () { swipe.cancel(this); this._homeVisible = false; this._homeEpoch = (this._homeEpoch || 0) + 1; this._unreadRequest = (this._unreadRequest || 0) + 1; this.stopUnreadPolling() },
   onUnload: function () { this.onHide() },
   stopUnreadPolling: function () { if (this._unreadTimer) clearInterval(this._unreadTimer); this._unreadTimer = null },
   refreshUnread: function () {

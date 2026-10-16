@@ -13,7 +13,7 @@ function state(k) {
 }
 function incoming(role, message, openid) {
   if (!message) return false
-  if (message.kind === 'assignment_notice') return true
+  if (message.kind === 'assignment_notice' || message.kind === 'admin_intervention') return true
   if (message.senderOpenid) return message.senderOpenid !== openid
   return (message.from || message.from_role) === (role === 'admin' ? 'user' : 'admin')
 }
