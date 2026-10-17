@@ -11,7 +11,7 @@ function renew() {
   return api.silentLogin({ requireReal: true }).then(function (user) {
     if (original !== key()) throw new Error('登录账号已改变，请重新打开页面')
     if (!user || user._simulator || !user.openid || user.openid === 'simulator_openid_dev') throw new Error('请使用手机微信完成真实登录')
-    Object.assign(app.globalData, { openid: user.openid, role: user.role || 'user', isAdmin: !!user.isAdmin, department: user.department || '', notificationSession: user.notificationSession || '', notificationSessionExpiresAt: user.notificationSessionExpiresAt || '', isSimulator: false, loginReady: Promise.resolve(user) })
+    Object.assign(app.globalData, { openid: user.openid, role: user.role || 'user', isAdmin: !!user.isAdmin, department: user.department || '', notificationSession: user.notificationSession || '', notificationSessionExpiresAt: user.notificationSessionExpiresAt || '', isSimulator: false, isLocalDevelopment: !!user._localDevelopment, loginReady: Promise.resolve(user) })
     if (['admin', 'leader', 'member'].indexOf(user.role) === -1 || !user.notificationSession) throw new Error('当前微信没有社团成员权限')
     return user
   })

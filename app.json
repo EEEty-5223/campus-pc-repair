@@ -8,6 +8,8 @@
     "pages/detail/detail",
     "pages/chat/chat",
     "pages/admin/admin",
+    "pages/completion/completion",
+    "pages/special-orders/special-orders",
     "pages/privacy/privacy",
     "pages/member-detail/member-detail"
   ],

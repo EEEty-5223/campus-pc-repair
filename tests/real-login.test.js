@@ -46,6 +46,16 @@ for(const role of ['admin','leader','member'])test('devtools authenticates '+rol
   await f.api.silentLogin({requireReal:true});assert.equal(f.calls.login,3);
 });
 test('actual phone still authenticates through same backend',async()=>{const f=fixture({platform:'ios',role:'admin'});assert.equal((await f.api.silentLogin()).role,'admin');assert.equal(f.calls.login,1);});
+for (const scenario of [
+  { active:true, expected:true },
+  { active:false, expected:false },
+  { active:true, flag:false, expected:false }
+]) test('detail derives assignment only when server omits flag '+JSON.stringify(scenario),async()=>{
+  const item={id:'a',status:'repairing',canProcess:true,assignees:[{openid:'verified-test-user',isActive:scenario.active}]};
+  if ('flag' in scenario) item.isAssignedToMe=scenario.flag;
+  const f=fixture({apiResponse:{ok:true,item}});f.app.onLaunch();await f.app.globalData.loginReady;
+  const result=await f.api.getAppointment('a');assert.equal(result.item.isAssignedToMe,scenario.expected);assert.equal(result.item.canProcess,true);
+});
 
 test('start and completion actions send separate signed code fields and owner route',async()=>{
  const f=fixture();f.app.onLaunch();await f.app.globalData.loginReady;
@@ -61,13 +71,14 @@ test('API preserves task permissions, repair logs and intervention notice withou
  const messages=await f.api.getMessages('a');assert.equal(messages.list[0].kind,'admin_intervention');
 });
 
-for(const platform of ['ios','android'])for(const envVersion of ['develop','trial','release'])test('phone '+platform+' '+envVersion+' login and booking always use public server',async()=>{
+for(const platform of ['ios','android'])for(const envVersion of ['develop','trial','release'])test('phone '+platform+' '+envVersion+' uses configured development or production backend',async()=>{
   const f=fixture({platform,envVersion,role:'admin'});
+  const base=envVersion==='develop'?'http://10.222.65.216:3000':'https://campusapi.keon5223.xyz';
   f.app.onLaunch();await f.app.globalData.loginReady;
   await f.api.createAppointment({name:'测试',phone:'13800000000',description:'仅请求桩验证'});
-  assert.equal(f.calls.requests.find(o=>o.url.endsWith('/api/login')).url,'https://campusapi.keon5223.xyz/api/login');
+  assert.equal(f.calls.requests.find(o=>o.url.endsWith('/api/login')).url,base+'/api/login');
   const booking=f.calls.requests.find(o=>o.url.endsWith('/api/appointments'));
-  assert.equal(booking.url,'https://campusapi.keon5223.xyz/api/appointments');
+  assert.equal(booking.url,base+'/api/appointments');
   assert.equal(booking.header.Authorization,'Bearer '+f.user.notificationSession);
 });
 
@@ -76,6 +87,11 @@ test('develop simulator keeps independent local member endpoint',async()=>{
   await assert.rejects(f.api.silentLogin());
   assert.equal(f.calls.requests[0].url,'http://127.0.0.1:3000/api/local-dev/login');
   assert.equal(f.calls.login,0);
+});
+for (const role of ['member','leader','admin']) test('develop simulator accepts fixed local account role '+role,async()=>{
+  const local={ok:true,_localDevelopment:true,openid:'local_test_member_xiaotangzhu',role,isAdmin:true,notificationSession:'localdev_'+'a'.repeat(64)};
+  const f=fixture({platform:'devtools',envVersion:'develop',apiResponse:local});
+  f.app.onLaunch();await f.app.globalData.loginReady;assert.equal(f.app.globalData.role,role);assert.equal(f.app.globalData.openid,local.openid);assert.equal(f.calls.login,0);
 });
 test('non-member retains join entry without receiving club permission',async()=>{const f=fixture({role:'user'});f.app.onLaunch();await f.app.globalData.loginReady;f.page.onShow();await new Promise(resolve=>setImmediate(resolve));assert.equal(f.page.data.isAdmin,false);});
 for(const options of [{noCode:true},{loginFail:true},{networkFail:true},{statusCode:401},{response:{ok:false,error:'login failed'}},{response:{ok:true,openid:'simulator_openid_dev',isAdmin:true,role:'admin'}},{response:{ok:true,openid:'fake-user',_simulator:true}},{response:{ok:true}}])test('failed or fake login never falls back: '+JSON.stringify(options),async()=>{

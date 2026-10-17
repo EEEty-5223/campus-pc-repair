@@ -4,7 +4,7 @@ function fixture(){
  const user={openid:'owner',notificationSession:'session',role:'admin',department:'技术部'},calls={modals:[],updates:[],codeReads:0,myReads:0,adminReads:0,refresh:0,toasts:[]};
  const item={id:'appt',status:'repairing',assignedOpenid:'member',assignedActiveCount:1};
  const api={getCompletionCode:()=>{calls.codeReads++;return Promise.resolve({completionCode:'0037'});},getMyAppointments:()=>{calls.myReads++;return Promise.resolve({list:[{...item}]});},getAdminAppointments:()=>{calls.adminReads++;return Promise.resolve({list:[{...item}]});},updateStatus:(...args)=>{calls.updates.push(args);return Promise.resolve({ok:true});}};
- const wx={showModal:o=>calls.modals.push(o),showToast:o=>calls.toasts.push(o)};
+ const wx={showModal:o=>calls.modals.push(o),showToast:o=>calls.toasts.push(o),navigateTo:o=>{calls.navigation=o.url;}};
  function load(file){const module={exports:{}};let page;vm.runInNewContext(fs.readFileSync(path.join(root,file),'utf8'),{module,Page:p=>page=p,require:n=>n.includes('api-request')?api:n.includes('assignment-ui')?{withPage:p=>p}:n.includes('admin-notifications')?{data:{},methods:{}}:{decorate:x=>({...x})},getApp:()=>({globalData:user}),wx,Promise,console});return page||module.exports;}
  const status=load('utils/appointment-status-ui.js'),page={data:{allItems:[item]},_chatVisible:true,_chatVisibilityVersion:1,setData(p){Object.assign(this.data,p)},loadItems(){calls.refresh++;return Promise.resolve();}};
  function detail(role='user'){const definition=load('pages/detail/detail.js');const d={...definition,data:{...definition.data,id:'appt',role},setData(p){Object.assign(this.data,p)}};return d;}
@@ -44,16 +44,16 @@ test('phase polling reloads changed status and stops on hide',async()=>{
  await d.loadItem();d.schedulePhasePolling();f.item.status='repairing';const callback=[...timers.values()][0];timers.clear();callback();await tick();
  assert.equal(d.data.startCode,'');assert.equal(d.data.completionCode,'0037');assert.equal(timers.size,1);d.onHide();assert.equal(timers.size,0);assert.equal(d.data.completionCode,'');
 });
-test('complete requires exactly four digits and keeps leading zeros unchanged',async()=>{
- const f=fixture(),event={currentTarget:{dataset:{id:'appt',status:'completed'}}};f.status.changeStatus.call(f.page,event);f.calls.modals.shift().success({confirm:true,content:'37'});assert.equal(f.calls.updates.length,0);
- f.status.changeStatus.call(f.page,event);f.calls.modals.shift().success({confirm:true,content:'0037'});await tick();assert.deepEqual(f.calls.updates[0],['appt','completed','0037']);assert.equal(f.calls.codeReads,0);
+test('complete opens evidence page without bypassing it through the old status endpoint',()=>{
+ const f=fixture(),event={currentTarget:{dataset:{id:'appt',status:'completed'}}};f.status.changeStatus.call(f.page,event);
+ assert.equal(f.calls.navigation,'/pages/completion/completion?id=appt');assert.equal(f.calls.modals.length,0);assert.equal(f.calls.updates.length,0);assert.equal(f.calls.codeReads,0);
 });
 test('wrong or locked code never updates local status; repeated in-flight submit is suppressed',async()=>{
- const f=fixture();let finish;f.api.updateStatus=(...args)=>{f.calls.updates.push(args);return new Promise((_,reject)=>finish=reject);};const event={currentTarget:{dataset:{id:'appt',status:'completed'}}};
- f.status.changeStatus.call(f.page,event);f.calls.modals.shift().success({confirm:true,content:'0000'});f.status.changeStatus.call(f.page,event);assert.equal(f.calls.updates.length,1);finish({code:'COMPLETION_CODE_LOCKED'});await tick();assert.equal(f.item.status,'repairing');assert.match(f.calls.modals[0].content,/锁定/);assert.equal(f.page.data.statusBusy,false);
+ const f=fixture();f.item.status='accepted';let finish;f.api.updateStatus=(...args)=>{f.calls.updates.push(args);return new Promise((_,reject)=>finish=reject);};const event={currentTarget:{dataset:{id:'appt',status:'repairing'}}};
+ f.status.changeStatus.call(f.page,event);f.calls.modals.shift().success({confirm:true,content:'0000'});f.status.changeStatus.call(f.page,event);assert.equal(f.calls.updates.length,1);finish({code:'START_CODE_LOCKED'});await tick();assert.equal(f.item.status,'accepted');assert.match(f.calls.modals[0].content,/锁定/);assert.equal(f.page.data.statusBusy,false);
 });
 test('stale confirmation after hide, account switch or status update cannot submit',()=>{
- for(const change of [f=>f.page._chatVisibilityVersion++,f=>f.user.openid='other',f=>f.item.status='completed']){const f=fixture();f.status.changeStatus.call(f.page,{currentTarget:{dataset:{id:'appt',status:'completed'}}});change(f);f.calls.modals.shift().success({confirm:true,content:'0037'});assert.equal(f.calls.updates.length,0);}
+ for(const change of [f=>f.page._chatVisibilityVersion++,f=>f.user.openid='other',f=>f.item.status='completed']){const f=fixture();f.item.status='accepted';f.status.changeStatus.call(f.page,{currentTarget:{dataset:{id:'appt',status:'repairing'}}});change(f);f.calls.modals.shift().success({confirm:true,content:'0037'});assert.equal(f.calls.updates.length,0);}
 });
 test('customer detail shows fixed owner-only code; staff detail never requests it',async()=>{
  const f=fixture(),d=f.detail();await d.loadItem();assert.equal(d.data.completionCode,'0037');assert.equal(f.calls.myReads,1);assert.equal(f.calls.adminReads,0);
@@ -74,8 +74,8 @@ test('appointment voided during code fetch hides code and synchronizes reason wi
  const d=f.detail();await d.loadItem();assert.equal(d.data.item.isVoided,true);assert.equal(d.data.item.voidReason,'重复预约');assert.equal(d.data.item.canReply,false);assert.equal(d.data.completionCode,'');assert.equal(d.data.codeLoading,false);assert.equal(d.data.codeError,'');
 });
 test('returning to admin after hidden request finishes re-enables state buttons',async()=>{
- const f=fixture();let finish;f.api.updateStatus=()=>new Promise(r=>finish=r);
- f.status.changeStatus.call(f.page,{currentTarget:{dataset:{id:'appt',status:'completed'}}});f.calls.modals.shift().success({confirm:true,content:'0037'});f.page._chatVisible=false;f.page._chatVisibilityVersion++;finish({ok:true});await tick();assert.equal(f.page._statusBusy,false);
- const definition=f.load('pages/admin/admin.js'),p={...definition,data:{...definition.data,statusBusy:true},_statusBusy:false,setData(x){Object.assign(this.data,x)},loadItems:()=>Promise.resolve(),scheduleChatPolling(){},loadNotificationStatus(){}};
+ const f=fixture();f.item.status='accepted';let finish;f.api.updateStatus=()=>new Promise(r=>finish=r);
+ f.status.changeStatus.call(f.page,{currentTarget:{dataset:{id:'appt',status:'repairing'}}});f.calls.modals.shift().success({confirm:true,content:'0037'});f.page._chatVisible=false;f.page._chatVisibilityVersion++;finish({ok:true});await tick();assert.equal(f.page._statusBusy,false);
+ const definition=f.load('pages/admin/admin.js'),p={...definition,data:{...definition.data,statusBusy:true},_statusBusy:false,setData(x){Object.assign(this.data,x)},loadItems:()=>Promise.resolve(),scheduleChatPolling(){},loadNotificationStatus(){},loadSpecialSummary(){}};
  p.onShow();await tick();assert.equal(p.data.statusBusy,false);
 });

@@ -2,6 +2,7 @@ var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
 var chatUnread = require('../../utils/chat-unread')
 var notifications = require('../../utils/admin-notifications')
+var specialOrders = require('../../utils/admin-special-orders')
 var memberDirectory = require('../../utils/members')
 var memberSession = require('../../utils/member-session')
 var statusUI = require('../../utils/appointment-status-ui')
@@ -59,7 +60,7 @@ function cardOptions(item, role, realAdmin) {
 function cardSnapshot(item) { return JSON.stringify([item.id, item.status, !!item.isVoided, item.assignedOpenid, item.assistantOpenids, item.assignedActiveCount]) }
 
 Page(assignmentUI.withPage(Object.assign({
-  data: Object.assign({}, notifications.data, {
+  data: Object.assign({}, notifications.data, specialOrders.data, {
     activeTab: 'appointments',
     role: '',
     isRealAdmin: false,
@@ -172,6 +173,7 @@ Page(assignmentUI.withPage(Object.assign({
       })
       self.loadItems().then(function () { self.scheduleChatPolling() })
       self.loadNotificationStatus()
+      self.loadSpecialSummary()
       if (self.data.activeTab === 'members') {
         self.loadMembers()
       }
@@ -199,7 +201,10 @@ Page(assignmentUI.withPage(Object.assign({
     var self = this; this.stopChatPolling()
     if (this._chatVisible && this.data.activeTab === 'appointments') this._chatTimer = setTimeout(function () {
       self._chatTimer = null
-      if (self._chatVisible && self.data.activeTab === 'appointments') self.loadItems().then(function () { self.scheduleChatPolling() })
+      if (self._chatVisible && self.data.activeTab === 'appointments') {
+        self.loadSpecialSummary()
+        self.loadItems().then(function () { self.scheduleChatPolling() })
+      }
     }, 10000)
   },
   onHide: function () { this.closeCardMenu(); swipe.cancel(this); this._chatVisible = false; this._chatVisibilityVersion = (this._chatVisibilityVersion || 0) + 1; this._itemsLoadId = (this._itemsLoadId || 0) + 1; this.stopChatPolling() },
@@ -751,4 +756,4 @@ Page(assignmentUI.withPage(Object.assign({
       icon: 'success'
     })
   }
-}, notifications.methods)))
+}, notifications.methods, specialOrders.methods)))

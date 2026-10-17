@@ -1,7 +1,12 @@
-<view class="page chat-page" wx:if="{{item}}">
-  <view class="chat-leave-note"><view>离开后收不到新消息推送，请回首页“快速沟通”查看未读。</view><button class="chat-leave-button" bindtap="leaveChat">离开聊天</button></view>
+<view id="chat-viewport-probe" class="chat-viewport-probe" aria-hidden="true"></view>
+<view
+  class="chat-page {{keyboardHeight > 0 ? 'keyboard-open' : ''}}"
+  style="bottom: {{keyboardInset}}px;"
+  wx:if="{{item}}"
+>
+  <view wx:if="{{!keyboardHeight}}" class="chat-leave-note"><view>离开后收不到新消息推送，请回首页“快速沟通”查看未读。</view><button class="chat-leave-button" bindtap="leaveChat">离开聊天</button></view>
   <view wx:if="{{loadError}}" class="chat-load-error">{{loadError}}<text bindtap="loadItem"> 点击重试</text></view>
-  <view class="chat-summary card">
+  <view wx:if="{{!keyboardHeight}}" class="chat-summary card">
     <view class="chat-summary-row">
       <text class="chat-summary-label">预约编号</text>
       <text class="chat-summary-value">{{item.id}}</text>
@@ -45,10 +50,14 @@
       <view class="chat-image-btn" bindtap="chooseImage">+</view>
       <textarea
         class="chat-input"
+        style="height: {{chatInputHeight}}rpx;"
         placeholder="{{role === 'admin' ? '回复用户…' : '与社团沟通'}}"
         value="{{chatText}}"
         maxlength="200"
-        auto-height
+        fixed="{{true}}"
+        adjust-position="{{false}}"
+        bindkeyboardheightchange="onChatKeyboardHeightChange"
+        bindlinechange="onChatInputLineChange"
         show-confirm-bar="{{false}}"
         bindinput="onChatInput"
         bindconfirm="sendMessage"

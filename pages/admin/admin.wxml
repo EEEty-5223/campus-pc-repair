@@ -4,7 +4,12 @@
     <view class="admin-count">预约与社团事务</view>
   </view>
 
-  <view wx:if="{{role === 'admin'}}" class="card notification-card">
+  <view class="backend-tools" wx:if="{{role === 'admin' || role === 'leader'}}" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart">
+    <button wx:if="{{role === 'admin'}}" class="backend-tool" bindtap="toggleNotificationPanel"><text>新预约提醒</text><text class="tool-meta {{notificationActive ? 'tool-active' : ''}}">{{notificationLoading ? '检查中' : notificationStatus}}</text><text class="tool-arrow">{{notificationExpanded ? '收起' : '›'}}</text></button>
+    <button class="backend-tool" bindtap="openSpecialOrders"><text>特殊单</text><view wx:if="{{specialPendingCount > 0}}" class="special-count"><view class="special-dot"></view><text>（待审核单：{{specialPendingCount}}）</text></view><text wx:elif="{{specialSummaryLoading}}" class="tool-meta">检查中</text><text wx:elif="{{specialSummaryError}}" class="tool-meta">待审核数暂不可用</text><text class="tool-arrow">›</text></button>
+  </view>
+
+  <view wx:if="{{role === 'admin' && notificationExpanded}}" class="card notification-card" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart">
     <view class="notification-heading">
       <view class="notification-title">新预约提醒</view>
       <text class="notification-status {{notificationActive ? 'notification-status-active' : ''}}">{{notificationLoading ? '检查中' : notificationStatus}}</text>
@@ -84,6 +89,7 @@
 
         <view class="fault-summary">{{item.faultType}}：{{item.description}}</view>
         <view class="schedule">{{item.appointmentDate}} {{item.timeSlot}} · {{item.location}}</view>
+        <button wx:if="{{(role === 'admin' || role === 'leader') && item.completionReview && item.completionReview.status === 'pending'}}" class="special-order-notice" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart" bindtap="openSpecialOrders"><view class="special-dot"></view>本单为特殊单，待审核 ›</button>
 
         <view class="reply-box" wx:if="{{item.canReply}}">
           <view class="reply-title">{{item._messagesFailed ? '消息暂时无法更新' : '沟通记录（共 ' + item.messages.length + ' 条）'}}</view>

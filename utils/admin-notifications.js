@@ -1,9 +1,24 @@
 var api = require('./api-request')
 
+function localTest(user) {
+  return !!(user && (user.isLocalDevelopment || user.openid === 'local_test_member_xiaotangzhu' || /^localdev_/.test(user.notificationSession || '')))
+}
+function showLocalState(page) {
+  page._notificationLoadId = (page._notificationLoadId || 0) + 1
+  page._notificationIdentity = ''
+  page._notificationConfig = null
+  page._notificationChallenge = null
+  page._notificationPending = null
+  page._notificationChoice = ''
+  page.setData({ notificationLoading: false, notificationBusy: false, notificationReady: false, notificationActive: false,
+    notificationCanSubscribe: false, notificationCanRetry: false, notificationNeedsSettings: false, notificationNeedsLogin: false,
+    notificationType: '', notificationClaims: 0, notificationLastDelivery: '', notificationStatus: '请用手机订阅',
+    notificationDescription: '本地测试账号可查看和操作后台。微信预约提醒请使用手机上的真实管理员账号订阅。' })
+}
 function identity(ignoreExpiry) {
   var app = getApp()
   var user = (app && app.globalData) || {}
-  if (user.role !== 'admin' || user.isSimulator || !user.openid || user.openid === 'simulator_openid_dev' || !user.notificationSession || (!ignoreExpiry && sessionExpired(user))) return ''
+  if (user.role !== 'admin' || user.isSimulator || localTest(user) || !user.openid || user.openid === 'simulator_openid_dev' || !user.notificationSession || (!ignoreExpiry && sessionExpired(user))) return ''
   return user.openid + ':' + user.notificationSession
 }
 
@@ -41,6 +56,7 @@ module.exports = {
     requireNotificationLogin: function (error) {
       if (!error || ['REAL_LOGIN_REQUIRED', 'ADMIN_REQUIRED', 'SESSION_EXPIRED'].indexOf(error.code) === -1) return false
       var app = getApp()
+      if (app && localTest(app.globalData)) { showLocalState(this); return true }
       if (app && app.globalData) {
         // 只清除提醒会话；既有预约等业务登录不在这里擅自变更。
         app.globalData.notificationSession = ''
@@ -64,6 +80,7 @@ module.exports = {
       if (this.data.notificationBusy) return Promise.resolve()
       var app = getApp()
       if (!app || !app.globalData) return Promise.resolve()
+      if (localTest(app.globalData)) { showLocalState(this); return Promise.resolve() }
       var originalOpenid = app.globalData.openid
       var originalSession = app.globalData.notificationSession
       this.setData({ notificationBusy: true })
@@ -107,6 +124,8 @@ module.exports = {
     loadNotificationStatus: function () {
       var self = this
       if (this.data.role !== 'admin') return Promise.resolve()
+      var app = getApp()
+      if (app && localTest(app.globalData)) { showLocalState(this); return Promise.resolve() }
       var currentIdentity = identity()
       var loginSnapshot = identity(true)
       var loadId = (this._notificationLoadId || 0) + 1

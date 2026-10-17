@@ -64,7 +64,7 @@ function fixture(options = {}) {
   vm.runInNewContext(source, { module, require: () => api, wx, getApp: () => app, Promise, Date })
   vm.runInNewContext(pageSource, {
     Page: value => { definition = value },
-    require: name => name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { markRead() {} } : name.includes('admin-notifications') ? module.exports : name.includes('api-request') ? api : {
+    require: name => name.includes('admin-special-orders') ? { data: {}, methods: { loadSpecialSummary: () => Promise.resolve() } } : name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { markRead() {} } : name.includes('admin-notifications') ? module.exports : name.includes('api-request') ? api : {
       decorate: x => x, list: () => { throw new Error('Must not show stale demo data after API error') }
     },
     getApp: () => app, wx, console: { error() {} }, Promise, setTimeout: () => 1, clearTimeout() {}
@@ -74,6 +74,28 @@ function fixture(options = {}) {
 }
 
 async function main() {
+  // Local test admin must never lose the club session to real-WeChat notification authentication.
+  for (const localUser of [
+    { openid: 'local_test_member_xiaotangzhu', notificationSession: 'localdev_' + 'a'.repeat(64) },
+    { isLocalDevelopment: true }
+  ]) {
+    const local = fixture({ user: localUser, statusError: true, statusErrorCode: 'REAL_LOGIN_REQUIRED' })
+    const token = local.user.notificationSession
+    local.page.onShow(); await flush()
+    assert.strictEqual(local.calls.statuses, 0)
+    assert.strictEqual(local.user.notificationSession, token)
+    assert.strictEqual(local.page.data.notificationNeedsLogin, false)
+    assert.strictEqual(local.page.data.notificationReady, false)
+    assert.strictEqual(local.page.data.notificationStatus, '请用手机订阅')
+    local.page.requireNotificationLogin({ code: 'REAL_LOGIN_REQUIRED' })
+    assert.strictEqual(local.user.notificationSession, token, 'late notification failure cannot erase a local club session')
+    await local.page.reloginNotifications()
+    assert.strictEqual(local.calls.logins, 0)
+    local.page.subscribeNotifications()
+    assert.strictEqual(local.calls.prompts.length, 0)
+    await local.page.loadItems()
+    assert.strictEqual(local.page.data.itemsError, false)
+  }
   const f = fixture()
   f.user.role = 'user'
   f.user.loginReady = Promise.resolve().then(() => { f.user.role = 'admin' })

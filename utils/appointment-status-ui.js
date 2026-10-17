@@ -11,6 +11,10 @@ module.exports = {
     var self = this, id = event.currentTarget.dataset.id, status = event.currentTarget.dataset.status
     var item = (this.data.allItems || []).find(function (r) { return r.id === id })
     if (!item || item.canProcess === false || item.isVoided || this._statusBusy || !(allowed[item.status] || []).includes(status)) return
+    if (status === 'completed') {
+      wx.navigateTo({ url: '/pages/completion/completion?id=' + encodeURIComponent(id) })
+      return
+    }
     if (status === 'accepted' && !(Number(item.assignedActiveCount) > 0 || (item.assignedActiveCount === undefined && item.assignedOpenid))) { wx.showToast({ title: '请先分配服务人员，再确认预约', icon: 'none' }); return }
     var needsCode = status === 'completed' || status === 'repairing', codeName = status === 'repairing' ? '开工码' : '完成码'
     var who = identity(), version = this._chatVisibilityVersion, original = item.status

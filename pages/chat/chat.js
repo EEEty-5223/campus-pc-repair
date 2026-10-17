@@ -3,8 +3,53 @@ var api = require('../../utils/api-request.js')
 var unread = require('../../utils/chat-unread')
 var LEAVE_MESSAGE = '离开聊天后收不到新消息推送，请回首页“快速沟通”查看未读消息。'
 Page({
-  data: { id: '', role: 'user', item: null, chatText: '', sending: false, scrollIntoView: '', loading: false, loadError: '', nativeLeavePrompt: false },
-  onLoad: function (options) { this._requestedAdmin = !!(options && options.role === 'admin'); this.setData({ id: (options && options.id) || '' }) },
+  data: { id: '', role: 'user', item: null, chatText: '', sending: false, scrollIntoView: '', loading: false, loadError: '', nativeLeavePrompt: false, keyboardHeight: 0, keyboardInset: 0, chatInputHeight: 72 },
+  onLoad: function (options) {
+    this._requestedAdmin = !!(options && options.role === 'admin')
+    this.setData({ id: (options && options.id) || '' })
+  },
+  onReady: function () { this.syncChatKeyboardLayout() },
+  onResize: function () { this.syncChatKeyboardLayout() },
+  onChatKeyboardHeightChange: function (event) {
+    if (this._disposed || !this._visible) return
+    this._chatKeyboardHeight = Math.max(0, Number(event.detail && event.detail.height) || 0)
+    this.syncChatKeyboardLayout()
+  },
+  syncChatKeyboardLayout: function () {
+    if (this._disposed || !this._visible) return
+    var self = this, version = (this._chatLayoutVersion || 0) + 1
+    var keyboardHeight = this._chatKeyboardHeight || 0
+    this._chatLayoutVersion = version
+    var apply = function (viewport) {
+      if (self._disposed || !self._visible || self._chatLayoutVersion !== version) return
+      var viewportHeight = viewport && Number(viewport.height) || 0
+      var viewportWidth = viewport && Number(viewport.width) || 0
+      // Measure the real CSS viewport; windowHeight may use a different area on a phone.
+      if (viewportHeight > 0) {
+        if (!self._chatViewportHeight || (!keyboardHeight && !self.data.keyboardHeight)) {
+          self._chatViewportHeight = viewportHeight
+        }
+        if (viewportWidth > 0) self._chatViewportWidth = viewportWidth
+      }
+      // Some clients already resize the viewport when opening the keyboard.
+      // Only move the page by the portion that still overlaps its viewport.
+      var resizedHeight = viewportHeight > 0
+        ? Math.max(0, (self._chatViewportHeight || viewportHeight) - viewportHeight) : 0
+      var inset = Math.max(0, keyboardHeight - resizedHeight)
+      if (self.data.keyboardHeight === keyboardHeight && self.data.keyboardInset === inset) return
+      self.setData({ keyboardHeight: keyboardHeight, keyboardInset: inset })
+    }
+    if (typeof wx.createSelectorQuery !== 'function') { apply(null); return }
+    wx.createSelectorQuery().in(this).select('#chat-viewport-probe').boundingClientRect(apply).exec()
+  },
+  onChatInputLineChange: function (event) {
+    if (this._disposed || !this._visible) return
+    var contentHeight = Number(event.detail && event.detail.height)
+    if (!isFinite(contentHeight) || contentHeight <= 0) return
+    var width = this._chatViewportWidth || 375
+    var height = Math.max(72, Math.min(150, Math.ceil(contentHeight * 750 / width + 30)))
+    if (height !== this.data.chatInputHeight) this.setData({ chatInputHeight: height })
+  },
   resolveViewerRole: function () {
     var user = (getApp() && getApp().globalData) || {}
     return this._requestedAdmin && user.notificationSession && !user.isSimulator && user.openid !== 'simulator_openid_dev' && ['admin', 'leader', 'member'].indexOf(user.role) !== -1 ? 'admin' : 'user'
@@ -16,6 +61,7 @@ Page({
   onShow: function () {
     var self = this, app = getApp(), version = (this._visibilityVersion || 0) + 1
     this._disposed = false; this._visible = true; this._visibilityVersion = version; this.stopPolling(); this.setData({ sending: false })
+    this.syncChatKeyboardLayout()
     if (typeof wx.enableAlertBeforeUnload === 'function') {
       try { wx.enableAlertBeforeUnload({ message: LEAVE_MESSAGE,
         success: function () { if (self._visible && version === self._visibilityVersion) self.setData({ nativeLeavePrompt: true }) },
@@ -40,7 +86,17 @@ Page({
     var self = this; this.stopPolling()
     if (this._visible) this._pollTimer = setTimeout(function () { self._pollTimer = null; if (self._visible) self.loadItem().then(function () { self.schedulePolling() }) }, 5000)
   },
-  onHide: function () { this._visible = false; this._visibilityVersion = (this._visibilityVersion || 0) + 1; this._loadId = (this._loadId || 0) + 1; this._sendNonce = (this._sendNonce || 0) + 1; this.stopPolling(); if (!this._disposed) this.setData({ sending: false }); this.disableLeavePrompt() },
+  onHide: function () {
+    this._visible = false
+    this._visibilityVersion = (this._visibilityVersion || 0) + 1
+    this._loadId = (this._loadId || 0) + 1
+    this._sendNonce = (this._sendNonce || 0) + 1
+    this._chatLayoutVersion = (this._chatLayoutVersion || 0) + 1
+    this._chatKeyboardHeight = 0
+    this.stopPolling()
+    if (!this._disposed) this.setData({ sending: false, keyboardHeight: 0, keyboardInset: 0 })
+    this.disableLeavePrompt()
+  },
   onUnload: function () { this._disposed = true; this._selectedImage = null; this.onHide() },
   disableLeavePrompt: function () { if (typeof wx.disableAlertBeforeUnload === 'function') { try { wx.disableAlertBeforeUnload({}) } catch (_) {} } },
   leaveChat: function () {
@@ -87,7 +143,11 @@ Page({
       })
     }).catch(function (error) { if (current()) { var patch = { loading: false, loadError: error.message || '聊天加载失败，请重试。' }; if (['APPOINTMENT_FORBIDDEN', 'APPOINTMENT_NOT_FOUND', 'MEMBER_REQUIRED', 'SESSION_EXPIRED', 'REAL_LOGIN_REQUIRED'].indexOf(error.code) !== -1) patch.item = null; else if (self.data.item) patch.item = Object.assign({}, self.data.item, { canReply: false }); self.setData(patch) } })
   },
-  onChatInput: function (event) { this.setData({ chatText: event.detail.value }) },
+  onChatInput: function (event) {
+    var patch = { chatText: event.detail.value }
+    if (!patch.chatText) patch.chatInputHeight = 72
+    this.setData(patch)
+  },
   sendMessage: function () {
     var self = this, text = String(this.data.chatText || '').trim(), identity = this.chatIdentity()
     if (!text) { wx.showToast({ title: '请输入内容', icon: 'none' }); return Promise.resolve() }
@@ -99,7 +159,7 @@ Page({
     return api.sendMessage(this.data.id, this.data.role, text).then(function () {
       self._sendInFlight = false
       if (!current()) return
-      self.setData({ sending: false, chatText: '' }); if (self._visible) return self.loadItem()
+      self.setData({ sending: false, chatText: '', chatInputHeight: 72 }); if (self._visible) return self.loadItem()
     }).catch(function (error) { self._sendInFlight = false; if (current()) { self.setData({ sending: false, item: Object.assign({}, self.data.item, { canReply: false }) }); wx.showToast({ title: error.message || '发送失败，请重试', icon: 'none' }); return self.loadItem() } })
   },
   chooseImage: function () {

@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "与社团沟通",
   "navigationBarBackgroundColor": "#2563EB",
-  "navigationBarTextStyle": "white"
+  "navigationBarTextStyle": "white",
+  "disableScroll": true
 }

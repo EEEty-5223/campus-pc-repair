@@ -3,13 +3,25 @@
 
 // 真机预览、体验版和正式版统一连接线上服务，可使用手机流量。
 const PRODUCTION_BASE_URL = 'https://campusapi.keon5223.xyz'
-// 仅本机开发工具启用独立普通成员，真机和发布版本使用微信登录。
+// 仅本机开发工具启用独立测试账号，角色由本地数据库决定；真机使用微信登录。
 const LOCAL_DEV_MEMBER = true
 function useLocalMember() {
   try { return LOCAL_DEV_MEMBER && wx.getAccountInfoSync().miniProgram.envVersion === 'develop' && wx.getSystemInfoSync().platform === 'devtools' } catch (_) { return false }
 }
 function resolveBaseUrl() {
-  return useLocalMember() ? 'http://127.0.0.1:3000' : PRODUCTION_BASE_URL
+  try {
+  var envVersion = wx.getAccountInfoSync().miniProgram.envVersion
+  var platform = wx.getSystemInfoSync().platform
+
+  if (envVersion === 'develop') {
+    if (platform === 'devtools') {
+      return 'http://127.0.0.1:3000'
+    }
+    return 'http://10.222.65.216:3000'
+  }
+
+  return PRODUCTION_BASE_URL
+  } catch (_) { return PRODUCTION_BASE_URL }
 }
 const BASE_URL = resolveBaseUrl()
 // 时间戳转显示文本(和 utils/appointments.js 保持一致)
@@ -46,6 +58,7 @@ function normalizeAppointment(row) {
     canProcess: row.canProcess,
     canAssign: row.canAssign,
     isAssignedToMe: !!row.isAssignedToMe,
+    completionReview: row.completionReview || null,
     repairHistory: Array.isArray(row.repairHistory) ? row.repairHistory : [],
     adminIntervened: !!row.adminIntervened,
     assignedDepartment: row.assigned_department,
@@ -86,7 +99,7 @@ function silentLogin(options) {
       wx.request({ url: BASE_URL + '/api/local-dev/login', method: 'POST', data: {}, timeout: 10000,
         success: function (r) {
           var d = r && r.data
-          if (r.statusCode === 200 && d && d.ok && d._localDevelopment && d.role === 'member' && d.openid === 'local_test_member_xiaotangzhu' && /^localdev_[a-f0-9]{64}$/.test(d.notificationSession || '')) resolve(d)
+          if (r.statusCode === 200 && d && d.ok && d._localDevelopment && ['member', 'leader', 'admin'].indexOf(d.role) !== -1 && d.openid === 'local_test_member_xiaotangzhu' && /^localdev_[a-f0-9]{64}$/.test(d.notificationSession || '')) resolve(d)
           else reject(new Error((d && d.error) || '独立测试成员登录失败'))
         }, fail: function () { reject(new Error('无法连接本机测试成员，请启动本地后端')) } })
     })
@@ -183,6 +196,8 @@ function notificationRequest(path, method, data, publicConfig, ownProfile, route
 }
 
 module.exports = {
+  memberRequest: function (path, method, data) { return notificationRequest('', method, data, false, false, path) },
+  getBackendBaseUrl: function () { return BASE_URL },
   silentLogin: silentLogin,
   request: request,
   normalizeAppointment: normalizeAppointment,
@@ -217,7 +232,14 @@ module.exports = {
   // 返回的 list 已经是驼峰字段
   getAppointment: function (id) {
     return notificationRequest('', 'GET', {}, false, false, '/api/appointments/' + encodeURIComponent(id)).then(function (r) {
-      var item = normalizeAppointment(r.item || r.appointment)
+      var rawItem = r.item || r.appointment
+      var item = normalizeAppointment(rawItem)
+      // Older detail responses omit isAssignedToMe; use their active team list for display only.
+      // Keep an explicit server false and the separate server canProcess permission authoritative.
+      if (item && !Object.prototype.hasOwnProperty.call(rawItem, 'isAssignedToMe')) {
+        var app = getApp(), openid = app && app.globalData && app.globalData.openid
+        item.isAssignedToMe = !!openid && item.assignees.some(function (person) { return person.openid === openid && person.isActive === true })
+      }
       if (item && r.canChat !== undefined) item.canChat = r.canChat
       if (item && r.canReply !== undefined) item.canReply = r.canReply
       return { ok: true, item: item }

@@ -1,15 +1,38 @@
+page {
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-viewport-probe {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .chat-page {
-  height: 100vh;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  padding: 20rpx 24rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 .chat-leave-note { margin-bottom:20rpx;padding:20rpx;color:#475569;font-size:23rpx;line-height:1.65;background:#eff6ff;border:1rpx solid #dbeafe;border-radius:16rpx; }
 .chat-leave-button { margin:14rpx 0 0;padding:0 20rpx;font-size:23rpx;line-height:58rpx;color:#2563eb;background:#ffffff;border-radius:10rpx; }
 .chat-load-error { margin-bottom:16rpx;color:#b42318;font-size:23rpx;line-height:1.6; }
 
 .chat-summary {
+  flex-shrink: 0;
   padding: 24rpx 30rpx;
 }
 
@@ -131,8 +154,8 @@
 .chat-input-bar {
   display: flex;
   align-items: flex-end;
-  margin-top: 24rpx;
-  padding-top: 20rpx;
+  margin-top: 12rpx;
+  padding-top: 12rpx;
   border-top: 1rpx solid #edf1f7;
 }
 
@@ -153,11 +176,15 @@
 
 .chat-input {
   flex: 1;
-  min-height: 80rpx;
-  max-height: 240rpx;
-  padding: 18rpx 24rpx;
+  box-sizing: border-box;
+  width: 0;
+  min-width: 0;
+  height: 72rpx;
+  min-height: 72rpx;
+  max-height: 150rpx;
+  padding: 14rpx 20rpx;
   font-size: 28rpx;
-  line-height: 1.6;
+  line-height: 40rpx;
   background: #f8fafc;
   border: 1rpx solid #e2e8f0;
   border-radius: 32rpx;
@@ -191,3 +218,12 @@
 }
 
 .chat-msg.msg-assignment,.chat-msg.msg-admin-notice{justify-content:center}.msg-assignment .chat-bubble,.msg-admin-notice .chat-bubble{max-width:90%;background:#f1f5f9;border:1rpx solid #e2e8f0;border-radius:14rpx;color:#475569}.msg-admin-notice .chat-text{font-size:24rpx;color:#475569}.msg-admin-notice .chat-meta,.msg-assignment .chat-meta{color:#64748b}.assignment-notice{font-size:25rpx;line-height:1.7}.assignment-notice-title{font-weight:600}.notice-person{padding:14rpx 0;border-bottom:1rpx solid #e2e8f0}.notice-phone{display:flex;align-items:center;justify-content:space-between;gap:16rpx}.notice-copy{width:auto!important;min-width:0!important;padding:0 20rpx;margin:0;line-height:48rpx;font-size:23rpx;color:#2563eb;background:white}.notice-hint{margin-top:14rpx;font-size:21rpx;color:#64748b}
+
+.chat-input-bar,
+.chat-closed {
+  flex-shrink: 0;
+}
+.chat-page.keyboard-open {
+  padding-top: 8rpx;
+  padding-bottom: 0;
+}

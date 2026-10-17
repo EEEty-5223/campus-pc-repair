@@ -1,0 +1,30 @@
+<view class="page special-page">
+  <view class="review-heading"><view class="heading-title">特殊单</view><text wx:if="{{pendingCount !== null}}" class="count {{pendingCount > 0 ? 'count-pending' : ''}}">待审核单：{{pendingCount}}</text></view>
+  <view class="scope-note">不方便拍照的完工单在这里审核。负责人查看所属部门的特殊单，管理员查看全部。</view>
+  <view wx:if="{{forbidden}}" class="card state">仅负责人和管理员可查看特殊单审核。</view>
+  <block wx:else>
+    <view class="review-filters"><button wx:for="{{filters}}" wx:key="value" class="filter {{status === item.value ? 'selected' : ''}}" data-status="{{item.value}}" disabled="{{!!busyId}}" bindtap="selectFilter">{{item.label}}</button></view>
+    <view class="card state" wx:if="{{error}}"><view>{{error}}</view><button class="secondary-button" bindtap="refresh" disabled="{{loading || !!busyId}}">重新加载</button></view>
+    <view wx:elif="{{loading && !items.length}}" class="card state">正在加载特殊单…</view>
+    <view wx:elif="{{!items.length}}" class="card state">当前没有{{status === 'pending' ? '待审核' : (status === 'approved' ? '已通过' : '未通过')}}的特殊单。</view>
+    <view class="card review-card" wx:for="{{items}}" wx:key="id">
+      <view class="review-top"><view class="job-title">{{item.customerName || '预约用户'}} · {{item.deviceType || '设备'}}</view><text class="review-status {{item.status}}">{{item.statusText}}</text></view>
+      <view class="meta">预约编号：{{item.appointmentId}}</view>
+      <view class="meta">提交人：{{item.submitterName || '社团成员'}} · {{item.submitterDepartment || '未设置部门'}}</view>
+      <view class="meta">提交时间：{{item.submittedAt}}</view>
+      <view class="reason">{{item.reason || '用户不方便拍照'}}</view>
+      <view wx:if="{{item.note}}" class="meta">补充说明：{{item.note}}</view>
+      <view wx:if="{{item.reviewerName}}" class="meta">审核人：{{item.reviewerName}} · {{item.reviewedAt}}</view>
+      <view wx:if="{{item.reviewReason}}" class="meta">审核说明：{{item.reviewReason}}</view>
+      <view class="review-actions">
+        <button class="small-button" data-id="{{item.appointmentId}}" bindtap="openAppointment">查看预约</button>
+        <button wx:if="{{item.photos.length}}" class="small-button" data-id="{{item.id}}" bindtap="previewPhotos">查看照片</button>
+        <block wx:if="{{item.status === 'pending' && item.canReview}}">
+          <button class="small-button reject-button" data-id="{{item.id}}" data-decision="reject" disabled="{{!!busyId || loading || !!error}}" bindtap="review">不通过</button>
+          <button class="small-button approve-button" data-id="{{item.id}}" data-decision="approve" disabled="{{!!busyId || loading || !!error}}" loading="{{busyId === item.id}}" bindtap="review">通过审核</button>
+        </block>
+      </view>
+    </view>
+    <button wx:if="{{hasMore && !error}}" class="secondary-button" loading="{{loading}}" disabled="{{loading || !!busyId}}" bindtap="loadMore">加载更多</button>
+  </block>
+</view>
