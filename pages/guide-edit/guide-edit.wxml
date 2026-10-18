@@ -1,0 +1,42 @@
+<view class="portal-page">
+  <view class="portal-title">{{preview ? '文章预览' : '写一篇指南'}}</view>
+  <view class="portal-subtitle">{{status === 'published' ? '当前文章已发布' : '草稿仅管理人员可见'}} · {{canPublish ? '管理员可发布' : '负责人撰写草稿'}}</view>
+  <view wx:if="{{error}}" class="portal-card portal-state portal-error">{{error}}<button wx:if="{{loadFailed}}" class="portal-secondary" bindtap="load">重新加载</button></view>
+  <view wx:if="{{loading}}" class="portal-state">正在加载文章资料…</view>
+  <block wx:if="{{!preview}}">
+    <view class="portal-card">
+      <view class="portal-label">文章标题</view>
+      <input class="portal-input" value="{{title}}" maxlength="80" data-field="title" bindinput="input" placeholder="例如：新电脑到手，先做这几件事" disabled="{{busy || loading || loadFailed}}"/>
+      <view class="portal-label">文章摘要</view>
+      <textarea class="portal-textarea summary-input" value="{{summary}}" maxlength="200" data-field="summary" bindinput="input" placeholder="简单介绍这篇文章能解决什么问题（选填）" disabled="{{busy || loading || loadFailed}}"/>
+      <view class="portal-label">分类</view>
+      <picker range="{{categories}}" value="{{categoryIndex}}" bindchange="categoryChange" disabled="{{busy || loading || loadFailed}}"><view class="portal-input">{{categories[categoryIndex]}}　⌄</view></picker>
+      <view class="portal-label">封面（选填）</view>
+      <image wx:if="{{coverUrl}}" src="{{coverUrl}}" class="portal-cover edit-cover" mode="aspectFill" binderror="coverFailed"/>
+      <view wx:if="{{imageError}}" class="portal-tip portal-error" bindtap="retryCover">{{imageError}}</view>
+      <button class="portal-secondary" data-target="cover" bindtap="chooseImage" disabled="{{loading || loadFailed || busy || uploading || choosing}}">{{cover ? '更换封面' : '上传封面'}}</button>
+      <button wx:if="{{cover}}" class="portal-secondary" bindtap="removeCover" disabled="{{loading || loadFailed || busy || uploading || choosing}}">移除封面</button>
+      <view class="portal-label">正文</view>
+      <view class="portal-row-desc">段落之间空一行，标题前写“# ”；点下方按钮可插入图片。</view>
+      <textarea class="portal-textarea body-input" value="{{body}}" maxlength="20000" data-field="body" bindinput="input" placeholder="写下你的电脑使用经验…" disabled="{{busy || loading || loadFailed}}"/>
+      <button class="portal-secondary" data-target="body" bindtap="chooseImage" loading="{{uploading}}" disabled="{{loading || loadFailed || busy || uploading || choosing}}">＋ 插入正文图片</button>
+    </view>
+  </block>
+  <view wx:else class="portal-card">
+    <view class="portal-title">{{title || '未填写标题'}}</view>
+    <view class="portal-subtitle">{{summary}}</view>
+    <view wx:if="{{previewLoading}}" class="portal-state">正在加载预览图片…</view>
+    <block wx:for="{{blocks}}" wx:key="index">
+      <block wx:if="{{item.type === 'image'}}">
+        <image wx:if="{{item.url}}" class="preview-image" src="{{item.url}}" mode="widthFix" data-index="{{index}}" binderror="previewImageFailed"/>
+        <view wx:else class="portal-tip" bindtap="retryPreviewImages">图片加载失败，点击重试</view>
+      </block>
+      <view wx:else class="preview-block {{item.type === 'heading' ? 'preview-heading' : ''}}">{{item.text}}</view>
+    </block>
+  </view>
+  <button class="portal-secondary" bindtap="preview" disabled="{{loading || loadFailed || busy || uploading || choosing}}">{{preview ? '返回编辑' : '预览排版'}}</button>
+  <view class="edit-actions">
+    <button class="portal-secondary" bindtap="saveDraft" loading="{{busy}}" disabled="{{loading || loadFailed || busy || uploading || choosing || previewLoading || (!canPublish && status === 'published')}}">{{status === 'published' ? '下架为草稿' : '保存草稿'}}</button>
+    <button wx:if="{{canPublish}}" class="portal-primary" bindtap="publish" disabled="{{loading || loadFailed || busy || uploading || choosing || previewLoading}}">{{status === 'published' ? '更新发布' : '发布文章'}}</button>
+  </view>
+</view>

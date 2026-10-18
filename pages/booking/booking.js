@@ -362,7 +362,7 @@ Page({
             showCancel: true,
             confirmText: '查看预约',
             cancelText: '留在首页',
-            confirmColor: '#2563EB',
+            confirmColor: '#0b8f89',
             success: function (res) {
               if (!self.data.isEditing) {
                 clearDraftFromStorage()
@@ -372,7 +372,7 @@ Page({
                 }
               }
               if (res.confirm) {
-                wx.switchTab({ url: '/pages/records/records' })
+                wx.redirectTo({ url: '/pages/records/records' })
               } else {
                 wx.switchTab({ url: '/pages/index/index' })
               }
@@ -404,7 +404,7 @@ Page({
       showCancel: true,
       confirmText: '查看预约',
       cancelText: '留在首页',
-      confirmColor: '#2563EB',
+      confirmColor: '#0b8f89',
       success: function (res) {
         if (!self.data.isEditing) {
           clearDraftFromStorage()
@@ -414,7 +414,7 @@ Page({
           }
         }
         if (res.confirm) {
-          wx.switchTab({ url: '/pages/records/records' })
+          wx.redirectTo({ url: '/pages/records/records' })
         } else {
           wx.switchTab({ url: '/pages/index/index' })
         }

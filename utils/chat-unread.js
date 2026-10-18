@@ -41,6 +41,14 @@ function countUnread(openid, appointmentId, viewerRole, messages) {
   return count
 }
 function overview(openid, api) {
+  if (typeof api.getMessageOverview === 'function') {
+    return Promise.all([api.getMyAppointments(openid), api.getMessageOverview()]).then(function (responses) {
+      if (!responses[0] || !Array.isArray(responses[0].list) || !responses[1] || !Array.isArray(responses[1].list)) throw new Error('消息概览无法读取')
+      var counts = {}, total = 0
+      responses[1].list.forEach(function (thread) { var count = Number(thread.unread); if (!Number.isInteger(count) || count < 0) throw new Error('未读数量无效'); counts[thread.appointmentId] = count; total += count })
+      return { items: responses[0].list, counts: counts, total: total }
+    })
+  }
   return api.getMyAppointments(openid).then(function (response) {
     if (!response || !Array.isArray(response.list)) throw new Error('预约列表无法读取')
     var items = response.list, counts = {}, next = 0

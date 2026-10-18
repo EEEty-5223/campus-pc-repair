@@ -1,0 +1,21 @@
+.portal-page{min-height:100vh;box-sizing:border-box;background:var(--color-page, #f3f8f6);padding:28rpx 30rpx 60rpx;color:#172b3a}.portal-title{font-size:38rpx;font-weight:800;line-height:1.5}.portal-subtitle{font-size:25rpx;color:#718397;line-height:1.8;margin-top:8rpx}.portal-card{background:#fff;border:1rpx solid #e5eeea;border-radius:28rpx;padding:30rpx;margin-top:24rpx;box-shadow:0 8rpx 28rpx rgba(42,66,95,.04)}.portal-primary,.portal-secondary{font-size:28rpx;line-height:84rpx;border-radius:20rpx;margin:24rpx 0 0;font-weight:600}.portal-primary{background:var(--color-primary, #0b8f89);color:#fff}.portal-secondary{background:#edf7f7;color:var(--color-primary-strong, #087f7b)}.portal-primary::after,.portal-secondary::after{border:0}.portal-state{padding:56rpx 24rpx;text-align:center;font-size:28rpx;line-height:1.9;color:#75859a}.portal-error{color:#b94e49}.portal-section{font-size:30rpx;font-weight:700;margin:30rpx 0 12rpx}.portal-row{display:flex;align-items:center;gap:20rpx;min-height:108rpx;border-bottom:1rpx solid #eaf1ed}.portal-row:last-child{border-bottom:0}.portal-row-main{flex:1;min-width:0}.portal-row-title{font-size:29rpx;font-weight:600}.portal-row-desc{font-size:24rpx;color:#8794a5;margin-top:8rpx;line-height:1.7}.portal-arrow{color:#a4afbb;font-size:40rpx}.portal-icon{width:68rpx;height:68rpx;border-radius:20rpx;background:#e6f8f7;display:flex;align-items:center;justify-content:center;font-size:34rpx;color:var(--color-primary-strong, #087f7b)}.portal-badge{background:#f06b68;color:#fff;padding:2rpx 12rpx;border-radius:30rpx;font-size:22rpx}/* Native input has a default fixed height: give it a real content box. */
+.portal-input,.portal-textarea{box-sizing:border-box;background:#f5faf7;border:1rpx solid #e6edf3;border-radius:18rpx;width:100%;font-size:30rpx;margin-top:16rpx}
+.portal-input{height:92rpx;min-height:92rpx;padding:0 24rpx;line-height:normal}
+.portal-textarea{padding:22rpx;line-height:1.8}
+.portal-textarea{height:400rpx;line-height:1.8}.portal-label{font-size:26rpx;font-weight:600;margin-top:26rpx}.portal-tags{display:flex;gap:16rpx;margin:24rpx 0}.portal-tag{padding:14rpx 28rpx;border-radius:30rpx;font-size:25rpx;background:#fff;color:#748395;border:1rpx solid #e4eee8}.portal-tag.selected{background:var(--color-primary, #0b8f89);border-color:var(--color-primary, #0b8f89);color:white}.portal-cover{width:100%;height:260rpx;border-radius:20rpx;background:#e8f5f5}.portal-meta{font-size:23rpx;color:#8996a5;margin-top:18rpx}.portal-link{font-size:26rpx;color:var(--color-primary-strong, #087f7b);line-height:2}.portal-tip{background:#e9f7f7;border-radius:18rpx;padding:22rpx;color:#277e7d;font-size:25rpx;line-height:1.8;margin-top:24rpx}
+
+/* Override WeChat's default button width and padding for full-width form actions. */
+button.portal-primary,button.portal-secondary {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  width:100% !important;
+  min-width:0;
+  max-width:100%;
+  height:88rpx;
+  min-height:88rpx;
+  padding:0 24rpx;
+  line-height:1.4;
+}
+button.portal-primary[disabled],button.portal-secondary[disabled]{opacity:.6}

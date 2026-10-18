@@ -1,0 +1,2 @@
+@import "../../utils/portal.wxss";
+.summary-input{height:170rpx}.body-input{height:620rpx}.edit-cover{margin-top:20rpx}.edit-actions{display:flex;gap:20rpx}.edit-actions button{flex:1;font-size:26rpx}.preview-block{font-size:29rpx;line-height:1.95;white-space:pre-wrap;word-break:break-word;margin-top:28rpx}.preview-heading{font-weight:700;font-size:34rpx}.preview-image{width:100%;margin-top:24rpx}

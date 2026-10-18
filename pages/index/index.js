@@ -31,7 +31,7 @@ Page({
   onNavigationTouchCancel: function () { swipe.cancel(this) },
   onNavigationTouchEnd: function (event) {
     var gesture = swipe.end(this, event)
-    if (gesture && gesture.direction === 'left') swipe.switchMainTab(this, '/pages/records/records')
+    if (gesture && gesture.direction === 'left') swipe.switchMainTab(this, '/pages/guides/guides')
   },
 
   onShow: function () {
@@ -125,18 +125,10 @@ Page({
   },
 
   goRecords: function () {
-    wx.switchTab({ url: '/pages/records/records' })
+    wx.navigateTo({ url: '/pages/records/records' })
   },
 
   goConsult: function () {
     wx.navigateTo({ url: '/pages/consult/consult' })
-  },
-
-  goAdmin: function () {
-    wx.navigateTo({ url: '/pages/admin/admin' })
-  },
-
-  goApply: function () {
-    wx.navigateTo({ url: '/pages/apply/apply' })
   }
 })

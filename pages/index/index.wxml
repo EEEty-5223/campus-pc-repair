@@ -1,5 +1,4 @@
 <view class="page home-page" bindtouchstart="onNavigationTouchStart" bindtouchmove="onNavigationTouchMove" bindtouchend="onNavigationTouchEnd" bindtouchcancel="onNavigationTouchCancel">
-  <view class="navigation-hint">左滑查看我的预约 ›</view>
   <view class="hero">
     <view class="hero-badge">电脑e家社团服务</view>
     <view class="hero-title">电脑出问题？<br />先预约, 再处理</view>
@@ -49,6 +48,4 @@
     <view class="notice-line">· 检测后如需购买配件，会先征得本人同意</view>
   </view>
 
-  <view class="admin-entry" bindtap="goAdmin" wx:if="{{isAdmin}}">社团后台 ›</view>
-  <view class="admin-entry apply-entry" bindtap="goApply" wx:if="{{!isAdmin}}">申请加入社团 ›</view>
 </view>

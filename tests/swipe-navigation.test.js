@@ -32,7 +32,7 @@ function gesture(p, direction, scope = 'page') {
 test('home left and records header right switch the native bottom tab; outer edges stay put', () => {
   const home = page('index'), records = page('records')
   gesture(home.p, 'right'); assert.equal(home.switches.length, 0)
-  gesture(home.p, 'left'); assert.deepEqual(home.switches, ['/pages/records/records'])
+  gesture(home.p, 'left'); assert.deepEqual(home.switches, ['/pages/guides/guides'])
   gesture(records.p, 'left'); assert.equal(records.switches.length, 0)
   gesture(records.p, 'right'); assert.deepEqual(records.switches, ['/pages/index/index'])
 })

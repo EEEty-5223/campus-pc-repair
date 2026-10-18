@@ -7,8 +7,8 @@ function fixture(options = {}) {
   const timers = new Map(), storage = {}, calls = { marks: [], renders: [], patches: [], prompts: [], disables: 0, modals: [], switches: [], ownFetches: 0, adminFetches: 0, messageFetches: 0, sends: 0, imageSends: 0, uploads: 0, pendingMessages: [], pendingSends: [] }
   let nextTimer = 1, page, media, sendResolver
   const wx = { getAccountInfoSync: () => ({ miniProgram: { envVersion: 'develop' } }), getStorageSync: key => storage[key], setStorageSync: (key, value) => { storage[key] = clone(value) },
-    showToast() {}, showModal: args => { calls.modals.push(args); args.success({ confirm: !options.cancelLeave }) },
-    switchTab: args => { calls.switches.push(args.url) }, chooseMedia: args => { media = args }, previewImage() {}
+    showToast() {}, showModal: args => { calls.modals.push(args); args.success({ confirm: !options.cancelLeave, cancel: !!options.cancelLeave }) },
+    navigateTo: args => { calls.switches.push(args.url) }, switchTab: args => { calls.switches.push(args.url) }, chooseMedia: args => { media = args }, previewImage() {}
   }
   if (!options.noNativePrompt) { wx.enableAlertBeforeUnload = args => { calls.prompts.push(args); if (options.nativeFail) args.fail({}); else args.success({}) }; wx.disableAlertBeforeUnload = () => { calls.disables++ } }
   const helper = { exports: {} }
@@ -91,11 +91,11 @@ test('fetch failure neither fabricates local conversation nor clears unread', as
 test('native leave alert uses honest reminder and visible fallback works if API absent or fails', async () => {
   for (const options of [{}, { noNativePrompt: true }, { nativeFail: true }]) {
     const f = fixture(options); await f.page.onShow(); f.page.leaveChat()
-    assert.equal(f.calls.modals[0].title, '离开聊天'); assert.match(f.calls.modals[0].content, /收不到新消息推送/)
-    assert.deepEqual(f.calls.switches, ['/pages/index/index'])
-    if (!options.noNativePrompt) assert.match(f.calls.prompts[0].message, /快速沟通/)
+    assert.equal(f.calls.modals[0].title, '离开聊天'); assert.match(f.calls.modals[0].content, /订阅一次消息/)
+    assert.deepEqual(f.calls.switches, ['/pages/subscriptions/subscriptions?id=p'])
+    if (!options.noNativePrompt) assert.match(f.calls.prompts[0].message, /用完需再次订阅/)
   }
-  const cancelled = fixture({ cancelLeave: true }); await cancelled.page.onShow(); cancelled.page.leaveChat(); assert.equal(cancelled.calls.switches.length, 0)
+  const cancelled = fixture({ cancelLeave: true }); await cancelled.page.onShow(); cancelled.page.leaveChat(); assert.deepEqual(cancelled.calls.switches, ['/pages/index/index'])
 })
 test('text send completing after hide/unload cannot update data; in-flight duplicate is blocked', async () => {
   for (const action of ['onHide', 'onUnload']) {

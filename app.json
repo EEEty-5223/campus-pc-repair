@@ -11,18 +11,28 @@
     "pages/completion/completion",
     "pages/special-orders/special-orders",
     "pages/privacy/privacy",
-    "pages/member-detail/member-detail"
+    "pages/member-detail/member-detail",
+    "pages/my/my",
+    "pages/profile/profile",
+    "pages/messages/messages",
+    "pages/guides/guides",
+    "pages/favorites/favorites",
+    "pages/guide-detail/guide-detail",
+    "pages/guide-manage/guide-manage",
+    "pages/guide-edit/guide-edit",
+    "pages/subscriptions/subscriptions",
+    "pages/help/help"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#2563EB",
+    "navigationBarBackgroundColor": "#0ca9a9",
     "navigationBarTextStyle": "white",
     "navigationBarTitleText": "校园电脑维修",
-    "backgroundColor": "#F5F7FB",
+    "backgroundColor": "#F3F8F6",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "color": "#64748B",
-    "selectedColor": "#2563EB",
+    "selectedColor": "#0ca9a9",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",
     "list": [
@@ -33,10 +43,16 @@
         "selectedIconPath": "./images/home_selected.png"
       },
       {
-        "pagePath": "pages/records/records",
-        "text": "我的预约",
-        "iconPath": "./images/book.png",
-        "selectedIconPath": "./images/book_selected.png"
+        "pagePath": "pages/guides/guides",
+        "text": "指南",
+        "iconPath": "images/guide.png",
+        "selectedIconPath": "images/guide_selected.png"
+      },
+      {
+        "pagePath": "pages/my/my",
+        "text": "我的",
+        "iconPath": "images/my.png",
+        "selectedIconPath": "images/my_selected.png"
       }
     ]
   },

@@ -1,6 +1,6 @@
 <view class="page admin-page" bindtouchstart="onNavigationTouchStart" bindtouchmove="onNavigationTouchMove" bindtouchend="onNavigationTouchEnd" bindtouchcancel="onNavigationTouchCancel">
   <view class="admin-head">
-    <view class="admin-title">社团后台</view>
+    <view class="admin-title">社团工作站</view>
     <view class="admin-count">预约与社团事务</view>
   </view>
 
@@ -29,6 +29,9 @@
     <view class="notification-footnote">通知会出现在微信“服务通知”中。退出小程序后仍可发送；锁屏提示需在手机和微信中开启通知。</view>
   </view>
 
+  <view class="backend-tools" wx:if="{{role === 'admin' || role === 'leader' || role === 'member'}}" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart">
+    <button class="backend-tool" bindtap="openTotalSubscriptions" loading="{{totalSubscriptionBusy}}" disabled="{{totalSubscriptionBusy}}"><text>总消息订阅</text><text class="tool-meta">{{totalSubscriptionLabel}}</text><text class="tool-arrow">›</text></button>
+  </view>
   <view class="navigation-hint">左右滑动顶部或栏目栏切换栏目</view>
   <!-- Tab 切换栏 -->
   <view class="tab-bar">
@@ -95,7 +98,10 @@
           <view class="reply-title">{{item._messagesFailed ? '消息暂时无法更新' : '沟通记录（共 ' + item.messages.length + ' 条）'}}</view>
           <view class="reply-existing {{item.latestMessage.viewerClass}}" wx:if="{{item.latestMessage}}">
             <text class="reply-existing-label">{{item.latestMessage.fromText}}（{{item.latestMessage.atText}}）：</text>
-            <image wx:if="{{item.latestMessage.type === 'image'}}" class="reply-preview-image" src="{{item.latestMessage.imageUrl}}" mode="widthFix" data-url="{{item.latestMessage.imageUrl}}" bindtap="previewReplyImage" />
+            <block wx:if="{{item.latestMessage.type === 'image'}}">
+              <image wx:if="{{item.latestMessage.imageDisplayUrl && !item.latestMessage.imageFailed}}" class="reply-preview-image" src="{{item.latestMessage.imageDisplayUrl}}" mode="aspectFit" data-id="{{item.id}}" data-source="{{item.latestMessage.imageUrl}}" data-url="{{item.latestMessage.imageDisplayUrl}}" bindtap="previewReplyImage" binderror="replyImageError" />
+              <view wx:else class="reply-image-failed" data-source="{{item.latestMessage.imageUrl}}" bindtap="retryReplyImage">图片加载失败，点击重试</view>
+            </block>
             <text wx:else class="reply-existing-content">{{item.latestMessage.content}}</text>
           </view>
           <view class="reply-entry-actions">

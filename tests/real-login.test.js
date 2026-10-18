@@ -21,8 +21,8 @@ function fixture(options={}) {
   const consoleStub={log(){},warn(){},error(){}};
   vm.runInNewContext(source('utils/api-request.js'),{module,wx,getApp:()=>app,Promise,console:consoleStub});
   const api=module.exports;
-  vm.runInNewContext(source('app.js'),{App:value=>{app=value;},require:name=>name.includes('api-request')?api:{clearDemoData(){}},Promise,console:consoleStub});
-  vm.runInNewContext(source('pages/index/index.js'),{Page:value=>{page=value;},require:name=>name.includes('chat-unread')?{overview:()=>Promise.resolve({total:0,counts:{},items:[]})}:name.includes('api-request')?api:{},getApp:()=>app,wx,Promise,setInterval:()=>1,clearInterval(){},console:consoleStub});
+  vm.runInNewContext(source('app.js'),{App:value=>{app=value;},require:name=>name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('api-request')?api:{clearDemoData(){}},Promise,console:consoleStub});
+  vm.runInNewContext(source('pages/index/index.js'),{Page:value=>{page=value;},require:name=>name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('chat-unread')?{overview:()=>Promise.resolve({total:0,counts:{},items:[]})}:name.includes('api-request')?api:{},getApp:()=>app,wx,Promise,setInterval:()=>1,clearInterval(){},console:consoleStub});
   page.setData=patch=>Object.assign(page.data,patch);
   return {api,calls,app,page,user};
 }
@@ -46,6 +46,15 @@ for(const role of ['admin','leader','member'])test('devtools authenticates '+rol
   await f.api.silentLogin({requireReal:true});assert.equal(f.calls.login,3);
 });
 test('actual phone still authenticates through same backend',async()=>{const f=fixture({platform:'ios',role:'admin'});assert.equal((await f.api.silentLogin()).role,'admin');assert.equal(f.calls.login,1);});
+test('editing a booking uses signed identity and HTTP or non-JSON API failures never report success',async()=>{
+ const f=fixture();f.app.onLaunch();await f.app.globalData.loginReady
+ await f.api.updateAppointment('A1',{name:'新名字'});const edit=f.calls.requests.at(-1)
+ assert.match(edit.url,/\/api\/appointments\/update$/);assert.equal(edit.header.Authorization,'Bearer signed-test-session');assert.equal(edit.header.openid,undefined)
+ for(const data of ['<html>Not Found</html>',{list:[]}]) {
+  const broken=fixture({apiResponse:data});broken.app.onLaunch();await broken.app.globalData.loginReady
+  await assert.rejects(broken.api.request('/missing','POST',{}),/服务响应异常/)
+ }
+})
 for (const scenario of [
   { active:true, expected:true },
   { active:false, expected:false },

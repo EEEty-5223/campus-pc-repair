@@ -9,6 +9,7 @@ var statusUI = require('../../utils/appointment-status-ui')
 var assignmentUI = require('../../utils/assignment-ui')
 var adminActions = require('../../utils/appointment-admin-actions')
 var swipe = require('../../utils/swipe-navigation')
+var directSubscription = require('../../utils/direct-staff-subscription')
 var USE_BACKEND = true
 
 function copyMember(member) { return JSON.parse(JSON.stringify(member)) }
@@ -62,6 +63,8 @@ function cardSnapshot(item) { return JSON.stringify([item.id, item.status, !!ite
 Page(assignmentUI.withPage(Object.assign({
   data: Object.assign({}, notifications.data, specialOrders.data, {
     activeTab: 'appointments',
+    totalSubscriptionBusy: false,
+    totalSubscriptionLabel: '准备中',
     role: '',
     isRealAdmin: false,
     adminActionBusy: false,
@@ -156,6 +159,7 @@ Page(assignmentUI.withPage(Object.assign({
   },
 
   onShow: function () {
+    this._subscriptionDisposed = false
     var self = this
     var app = getApp()
     this._chatVisible = true
@@ -173,6 +177,7 @@ Page(assignmentUI.withPage(Object.assign({
       })
       self.loadItems().then(function () { self.scheduleChatPolling() })
       self.loadNotificationStatus()
+      directSubscription.prepare(self)
       self.loadSpecialSummary()
       if (self.data.activeTab === 'members') {
         self.loadMembers()
@@ -207,8 +212,8 @@ Page(assignmentUI.withPage(Object.assign({
       }
     }, 10000)
   },
-  onHide: function () { this.closeCardMenu(); swipe.cancel(this); this._chatVisible = false; this._chatVisibilityVersion = (this._chatVisibilityVersion || 0) + 1; this._itemsLoadId = (this._itemsLoadId || 0) + 1; this.stopChatPolling() },
-  onUnload: function () { this.onHide() },
+  onHide: function () { directSubscription.hide(this); this.closeCardMenu(); swipe.cancel(this); this._chatVisible = false; this._chatVisibilityVersion = (this._chatVisibilityVersion || 0) + 1; this._itemsLoadId = (this._itemsLoadId || 0) + 1; this.stopChatPolling() },
+  onUnload: function () { directSubscription.dispose(this); this.onHide() },
 
   loadItems: function () {
     var self = this
@@ -338,6 +343,7 @@ Page(assignmentUI.withPage(Object.assign({
     })
   },
 
+  openTotalSubscriptions: function () { return directSubscription.tap(this) },
   switchTab: function (event) {
     var tab = event.currentTarget.dataset.tab
     if (swipe.adminTabs(this.data.role).indexOf(tab) < 0 || tab === this.data.activeTab) return
@@ -683,6 +689,14 @@ Page(assignmentUI.withPage(Object.assign({
     })
   },
   previewReplyImage: function (event) { var url = event.currentTarget.dataset.url; if (url) wx.previewImage({ urls: [url], current: url }) },
+  replyImageError: function (event) {
+    if (!this._chatVisible) return
+    var id = event.currentTarget.dataset.id
+    require('../../utils/chat-media').forget(event.currentTarget.dataset.source)
+    var allItems = this.data.allItems.map(function (item) { return item.id === id ? Object.assign({}, item, { latestMessage: Object.assign({}, item.latestMessage, { imageFailed: true }) }) : item })
+    this.setData({ allItems: allItems }); this.applyFilter()
+  },
+  retryReplyImage: function (event) { require('../../utils/chat-media').forget(event.currentTarget.dataset.source); return this.loadItems() },
 
   onReplyInput: function (event) {
     var id = event.currentTarget.dataset.id

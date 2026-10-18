@@ -1,0 +1,16 @@
+<view class="portal-page">
+  <view class="portal-title">个人资料</view>
+  <view class="portal-subtitle">设置你在个人中心显示的头像和昵称。</view>
+  <view class="portal-card">
+    <button class="avatar-picker" bindtap="chooseImage" disabled="{{loading || busy || uploading || choosing}}" aria-label="更换头像">
+      <image class="avatar-image" src="{{avatarUrl || '/images/my_avatar.png'}}" mode="aspectFill" binderror="avatarError" />
+      <view class="avatar-note">{{uploading ? '头像上传中…' : '点击更换头像'}}</view>
+    </button>
+    <view class="portal-label">昵称</view>
+    <input class="portal-input" type="text" value="{{nickname}}" bindinput="input" bindblur="input" maxlength="32" placeholder="请输入昵称" disabled="{{loading || busy}}" />
+    <view class="portal-tip">这里的昵称仅用于个人展示，不会更改预约联系方式或社团成员身份。</view>
+    <view wx:if="{{error}}" class="portal-state portal-error">{{error}}</view>
+    <button wx:if="{{loadFailed || avatarFailed}}" class="portal-secondary" bindtap="load" disabled="{{loading || uploading || busy}}">重新加载资料</button>
+    <button class="portal-primary" loading="{{busy}}" disabled="{{loading || loadFailed || busy || uploading || choosing}}" bindtap="save">保存资料</button>
+  </view>
+</view>

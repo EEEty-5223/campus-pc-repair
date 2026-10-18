@@ -1,0 +1,2 @@
+@import "../../utils/portal.wxss";
+.manage-edit{float:right;color:var(--color-primary-strong, #087f7b)}

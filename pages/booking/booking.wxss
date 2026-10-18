@@ -20,11 +20,11 @@
 .service-prefill-note {
   margin-top: 18rpx;
   padding: 16rpx 20rpx;
-  color: #1d4ed8;
+  color: var(--color-primary-strong, #087f7b);
   font-size: 24rpx;
   line-height: 1.5;
-  background: #eff6ff;
-  border: 1rpx solid #bfdbfe;
+  background: var(--color-primary-soft, #edf8f4);
+  border: 1rpx solid var(--color-primary-border, #bde5d9);
   border-radius: 14rpx;
 }
 
@@ -34,14 +34,14 @@
 
 .group-title {
   padding: 24rpx 0 10rpx;
-  color: #1d4ed8;
+  color: var(--color-primary-strong, #087f7b);
   font-size: 25rpx;
   font-weight: 700;
 }
 
 .field {
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #edf1f7;
+  border-bottom: 1rpx solid #e8f0eb;
 }
 
 .field.no-border {
@@ -107,7 +107,7 @@
 }
 
 .privacy-link {
-  color: #2563eb;
+  color: var(--color-primary, #0b8f89);
 }
 
 .submit-button {

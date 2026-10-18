@@ -85,7 +85,7 @@
   font-size: 22rpx !important;
   font-weight: 700;
   line-height: normal !important;
-  background: #2563eb !important;
+  background: var(--color-primary, #0b8f89) !important;
   border-radius: 999rpx !important;
   box-shadow: none !important;
 }
@@ -101,7 +101,7 @@
 }
 
 .consult-button:active {
-  background: #1d4ed8;
+  background: var(--color-primary-strong, #087f7b);
 }
 
 .empty-button {

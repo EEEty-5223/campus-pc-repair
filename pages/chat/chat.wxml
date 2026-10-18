@@ -4,7 +4,7 @@
   style="bottom: {{keyboardInset}}px;"
   wx:if="{{item}}"
 >
-  <view wx:if="{{!keyboardHeight}}" class="chat-leave-note"><view>离开后收不到新消息推送，请回首页“快速沟通”查看未读。</view><button class="chat-leave-button" bindtap="leaveChat">离开聊天</button></view>
+  <view wx:if="{{!keyboardHeight}}" class="chat-leave-note"><view>离开前可订阅一次消息，用完需再订阅。<text class="chat-subscribe-link" bindtap="subscribeMessages">去订阅 ›</text></view><button class="chat-leave-button" bindtap="leaveChat">离开聊天</button></view>
   <view wx:if="{{loadError}}" class="chat-load-error">{{loadError}}<text bindtap="loadItem"> 点击重试</text></view>
   <view wx:if="{{!keyboardHeight}}" class="chat-summary card">
     <view class="chat-summary-row">
@@ -34,11 +34,14 @@
           wx:key="id"
           id="msg-{{msg.id}}"
         >
+          <image wx:if="{{!msg.isAssignmentNotice}}" class="chat-avatar" src="{{msg.senderAvatarUrl || '/images/my_avatar.png'}}" mode="aspectFill" data-id="{{msg.id}}" binderror="avatarError" />
           <view class="chat-bubble">
             <view class="chat-meta">{{msg.fromText}} · {{msg.atText}}</view>
             <view wx:if="{{msg.isAssignmentNotice}}" class="assignment-notice"><view class="assignment-notice-title">{{msg.content}}</view><view wx:for="{{msg.assignmentPeople}}" wx:for-item="person" wx:key="openid" class="notice-person"><view>{{person.isPrimary || person.position === 'primary' ? '主要负责人' : '随行人员'}}：{{person.nickname || person.name || '社团成员'}} · {{person.department || '未填写部门'}}</view><view class="notice-phone"><text>{{person.phone || '暂未填写手机号'}}</text><button wx:if="{{person.phone}}" class="notice-copy" bindtap="copyPhone" data-phone="{{person.phone}}">复制</button></view></view><view wx:if="{{!msg.assignmentPeople.length}}">本次分配暂无服务人员</view><view class="notice-hint">此为分配时的信息，最新安排请查看预约详情。</view></view>
             <view wx:elif="{{msg.type === 'image'}}" class="chat-image-wrap">
-              <view wx:if="{{msg.isAdminNotice}}" class="chat-text">社团负责人：</view><image class="chat-image" src="{{msg.imageUrl}}" mode="widthFix" bindtap="previewImage" data-url="{{msg.imageUrl}}" lazy-load="true"></image>
+              <view wx:if="{{msg.isAdminNotice}}" class="chat-text">社团负责人：</view>
+              <image wx:if="{{msg.imageDisplayUrl && !msg.imageFailed}}" class="chat-image" src="{{msg.imageDisplayUrl}}" mode="aspectFit" bindtap="previewImage" data-url="{{msg.imageDisplayUrl}}" data-source="{{msg.imageUrl}}" data-id="{{msg.id}}" binderror="chatImageError" />
+              <view wx:else class="chat-image-failed" data-source="{{msg.imageUrl}}" bindtap="retryImage">图片加载失败，点击重试</view>
             </view>
             <view wx:else class="chat-text">{{msg.isAdminNotice ? '社团负责人：' : ''}}{{msg.content}}</view>
           </view>

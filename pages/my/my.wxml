@@ -1,0 +1,35 @@
+<view class="my-page">
+  <view class="my-header">
+    <view class="my-brand">电脑e家 · 校园服务</view>
+    <view class="my-profile" wx:if="{{profile}}">
+      <image wx:if="{{profile.avatarUrl}}" class="my-avatar" src="{{profile.avatarUrl}}" mode="aspectFill" binderror="avatarError" />
+      <view wx:else class="my-avatar my-avatar-default"><image src="/images/my_avatar.png" /></view>
+      <view class="my-person"><view class="my-name">{{profile.nickname}}</view><view class="my-id">{{profile.userId}}</view><text class="my-role">{{profile.roleText}}{{profile.department ? ' · ' + profile.department : ''}}</text></view>
+      <button class="my-edit" data-key="profile" bindtap="open">编辑资料 ›</button>
+    </view>
+    <view wx:else class="my-placeholder">{{loading ? '正在加载个人中心…' : '欢迎使用校园维修服务'}}</view>
+  </view>
+  <view class="my-body">
+    <view class="my-stats" wx:if="{{stats}}">
+      <view class="my-stat" data-key="records" bindtap="open"><view class="my-stat-value">{{stats.active}}</view><view class="my-stat-label">进行中的预约</view><view class="my-stat-visual">↗</view></view>
+      <view class="my-stat" data-key="favorites" bindtap="open"><view class="my-stat-value">{{stats.favorites}}</view><view class="my-stat-label">收藏的指南</view><view class="my-stat-visual favorite-visual">☆</view></view>
+    </view>
+    <view wx:if="{{error}}" class="portal-card portal-state portal-error">{{error}}<button class="portal-secondary" bindtap="load">重新加载</button></view>
+    <view class="my-group">
+      <view class="portal-row" data-key="records" bindtap="open"><view class="portal-icon">▤</view><view class="portal-row-main"><view class="portal-row-title">我的预约</view><view class="portal-row-desc">查看进度、开工码和完成码</view></view><text wx:if="{{stats}}" class="my-count">{{stats.total}} 条</text><text class="portal-arrow">›</text></view>
+      <view class="portal-row" data-key="messages" bindtap="open"><view class="portal-icon blue-icon">☏</view><view class="portal-row-main"><view class="portal-row-title">我的消息</view><view class="portal-row-desc">预约沟通和历史消息</view></view><text wx:if="{{stats.unread > 0}}" class="portal-badge">{{stats.unread > 99 ? '99+' : stats.unread}}</text><text class="portal-arrow">›</text></view>
+      <view class="portal-row" data-key="subscriptions" bindtap="open"><view class="portal-icon orange-icon">♧</view><view class="portal-row-main"><view class="portal-row-title">订阅一次消息</view><view class="portal-row-desc">选择一笔预约，仅订阅一次提醒</view></view><text class="portal-arrow">›</text></view>
+    </view>
+    <view class="my-group">
+      <view class="portal-row" data-key="guides" bindtap="open"><view class="portal-icon">▥</view><view class="portal-row-main"><view class="portal-row-title">电脑使用指南</view><view class="portal-row-desc">电脑使用技巧与常用应用建议</view></view><text class="portal-arrow">›</text></view>
+      <view class="portal-row" data-key="favorites" bindtap="open"><view class="portal-icon pink-icon">☆</view><view class="portal-row-main"><view class="portal-row-title">我的收藏</view></view><text class="portal-arrow">›</text></view>
+      <view class="portal-row" data-key="help" bindtap="open"><view class="portal-icon blue-icon">?</view><view class="portal-row-main"><view class="portal-row-title">帮助与服务说明</view></view><text class="portal-arrow">›</text></view>
+      <view class="portal-row" data-key="privacy" bindtap="open"><view class="portal-icon gray-icon">◇</view><view class="portal-row-main"><view class="portal-row-title">隐私保护</view></view><text class="portal-arrow">›</text></view>
+    </view>
+    <view class="my-group">
+      <view class="portal-row" data-key="{{isMember ? 'admin' : 'apply'}}" bindtap="open"><view class="portal-icon">⌂</view><view class="portal-row-main"><view class="portal-row-title">{{isMember ? '社团工作站' : '加入电脑e家'}}</view></view><text class="portal-arrow">›</text></view>
+      <view wx:if="{{canManage}}" class="portal-row" data-key="articles" bindtap="open"><view class="portal-icon blue-icon">✎</view><view class="portal-row-main"><view class="portal-row-title">指南文章管理</view></view><text class="portal-arrow">›</text></view>
+    </view>
+    <view class="my-footer">校园电脑维修预约 · 让校园用电脑更轻松</view>
+  </view>
+</view>

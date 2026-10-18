@@ -1,0 +1,24 @@
+<view class="portal-page">
+  <view wx:if="{{error}}" class="portal-card portal-state portal-error">{{error}}<button class="portal-secondary" bindtap="load">重新加载</button></view>
+  <view wx:elif="{{loading}}" class="portal-state">正在加载文章…</view>
+  <view wx:elif="{{article}}" class="article-paper">
+    <text class="article-category">{{article.categoryText}}</text>
+    <view class="article-title">{{article.title}}</view>
+    <view class="portal-meta">{{article.authorName}} · {{article.dateText}}</view>
+    <view wx:if="{{imageError}}" class="portal-tip portal-error" bindtap="retryImages">{{imageError}}</view>
+    <image wx:if="{{article.coverUrl}}" class="portal-cover article-cover" src="{{article.coverUrl}}" mode="aspectFill" binderror="imageFailed"/>
+    <view wx:if="{{article.summary}}" class="article-summary">{{article.summary}}</view>
+    <block wx:for="{{article.blocks}}" wx:key="index">
+      <block wx:if="{{item.type === 'image'}}">
+        <image wx:if="{{item.url}}" class="article-image" src="{{item.url}}" mode="widthFix" data-url="{{item.url}}" data-index="{{index}}" bindtap="preview" binderror="imageFailed"/>
+        <view wx:else class="portal-tip" bindtap="retryImages">图片加载失败，点击重试</view>
+      </block>
+      <view wx:else class="article-block {{item.type === 'heading' ? 'article-heading' : ''}}"><text selectable>{{item.text}}</text></view>
+    </block>
+    <view class="article-end">电脑e家 · 校园电脑使用指南</view>
+    <view class="article-actions">
+      <button class="portal-secondary" loading="{{busy}}" disabled="{{busy}}" bindtap="favorite">{{article.favorite ? '★ 已收藏' : '☆ 收藏文章'}}</button>
+      <button class="portal-primary" open-type="share">分享给同学</button>
+    </view>
+  </view>
+</view>

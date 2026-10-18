@@ -68,7 +68,7 @@
 
     <checkbox-group class="agreement" name="agreement">
       <label class="agreement-label">
-        <checkbox value="agreed" checked="{{isEditing}}" color="#2563EB" />
+        <checkbox value="agreed" checked="{{isEditing}}" color="#0b8f89" />
         <text>我已阅读并同意</text>
       </label>
       <text class="privacy-link" bindtap="goPrivacy">《信息使用说明》</text>

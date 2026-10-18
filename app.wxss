@@ -1,6 +1,8 @@
+@import "./utils/theme.wxss";
+
 page {
   min-height: 100%;
-  background: #f5f7fb;
+  background: var(--color-page, #f3f8f6);
   color: #172033;
   font-size: 28rpx;
 }
@@ -16,9 +18,9 @@ page {
   margin-bottom: 24rpx;
   padding: 30rpx;
   background: #ffffff;
-  border: 1rpx solid #e8edf5;
+  border: 1rpx solid #e5eeea;
   border-radius: 24rpx;
-  box-shadow: 0 10rpx 30rpx rgba(31, 53, 90, 0.06);
+  box-shadow: 0 10rpx 30rpx rgba(30, 83, 70, 0.06);
 }
 
 .section-title {
@@ -48,13 +50,13 @@ page {
 
 .primary-button {
   color: #ffffff;
-  background: #2563eb;
+  background: var(--color-primary, #0b8f89);
 }
 
 .secondary-button {
-  color: #2563eb;
-  background: #eff6ff;
-  border: 1rpx solid #bfdbfe;
+  color: var(--color-primary, #0b8f89);
+  background: var(--color-primary-soft, #edf8f4);
+  border: 1rpx solid var(--color-primary-border, #bde5d9);
 }
 
 .danger-button {
@@ -82,13 +84,13 @@ button::after {
 }
 
 .status-accepted {
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: var(--color-primary-strong, #087f7b);
+  background: var(--color-primary-tint, #dcf4eb);
 }
 
 .status-repairing {
-  color: #7e22ce;
-  background: #f3e8ff;
+  color: #0f766e;
+  background: #e3f4ec;
 }
 
 .status-completed {

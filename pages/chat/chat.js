@@ -1,7 +1,7 @@
 var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
 var unread = require('../../utils/chat-unread')
-var LEAVE_MESSAGE = '离开聊天后收不到新消息推送，请回首页“快速沟通”查看未读消息。'
+var LEAVE_MESSAGE = '离开前可订阅一次消息，用完需再次订阅；也可回首页查看。'
 Page({
   data: { id: '', role: 'user', item: null, chatText: '', sending: false, scrollIntoView: '', loading: false, loadError: '', nativeLeavePrompt: false, keyboardHeight: 0, keyboardInset: 0, chatInputHeight: 72 },
   onLoad: function (options) {
@@ -59,6 +59,7 @@ Page({
     return (user.openid || '') + ':' + (user.notificationSession || '') + ':' + (user.role || '') + ':' + this.data.id + ':' + this.resolveViewerRole()
   },
   onShow: function () {
+    this._subscriptionDisposed = false
     var self = this, app = getApp(), version = (this._visibilityVersion || 0) + 1
     this._disposed = false; this._visible = true; this._visibilityVersion = version; this.stopPolling(); this.setData({ sending: false })
     this.syncChatKeyboardLayout()
@@ -73,6 +74,7 @@ Page({
       var identity = self.chatIdentity()
       if (self._viewerIdentity !== identity) self.setData({ item: null, chatText: '', sending: false })
       self._viewerIdentity = identity; self.setData({ role: self.resolveViewerRole() })
+      if (self.data.role === 'admin') require('../../utils/direct-staff-subscription').prepare(self)
       return self.loadItem().then(function () {
         var selected = self._selectedImage
         if (self._visible && selected && selected.identity === self.chatIdentity()) { self._selectedImage = null; return self.sendImage(selected.file) }
@@ -87,6 +89,7 @@ Page({
     if (this._visible) this._pollTimer = setTimeout(function () { self._pollTimer = null; if (self._visible) self.loadItem().then(function () { self.schedulePolling() }) }, 5000)
   },
   onHide: function () {
+    require('../../utils/direct-staff-subscription').hide(this)
     this._visible = false
     this._visibilityVersion = (this._visibilityVersion || 0) + 1
     this._loadId = (this._loadId || 0) + 1
@@ -97,12 +100,15 @@ Page({
     if (!this._disposed) this.setData({ sending: false, keyboardHeight: 0, keyboardInset: 0 })
     this.disableLeavePrompt()
   },
-  onUnload: function () { this._disposed = true; this._selectedImage = null; this.onHide() },
+  onUnload: function () { require('../../utils/direct-staff-subscription').dispose(this); this._disposed = true; this._selectedImage = null; this.onHide() },
   disableLeavePrompt: function () { if (typeof wx.disableAlertBeforeUnload === 'function') { try { wx.disableAlertBeforeUnload({}) } catch (_) {} } },
+  subscribeMessages: function () { if (this.data.role === 'admin') return require('../../utils/direct-staff-subscription').tap(this); this.disableLeavePrompt(); wx.navigateTo({ url: '/pages/subscriptions/subscriptions?id=' + encodeURIComponent(this.data.id) }) },
   leaveChat: function () {
     var self = this, identity = this.chatIdentity()
-    wx.showModal({ title: '离开聊天', content: LEAVE_MESSAGE, confirmText: '回首页', cancelText: '继续聊天', success: function (result) {
-      if (!result.confirm || !self._visible || identity !== self.chatIdentity()) return
+    wx.showModal({ title: '离开聊天', content: LEAVE_MESSAGE, confirmText: '去订阅', cancelText: '直接离开', success: function (result) {
+      if (!self._visible || identity !== self.chatIdentity()) return
+      if (result.confirm) { self.subscribeMessages(); return }
+      if (!result.cancel) return
       self.disableLeavePrompt(); wx.switchTab({ url: '/pages/index/index', fail: function () { if (self._visible) self.onShow() } })
     } })
   },
@@ -134,12 +140,15 @@ Page({
         var notice = message.kind === 'assignment_notice', adminNotice = message.kind === 'admin_notice' || message.kind === 'admin_intervention'
         var own = message.senderOpenid ? message.senderOpenid === openid : message.from === self.data.role
         var label = message.senderName || (message.from === 'admin' ? '社团成员' : (self.data.role === 'admin' ? '预约用户' : '我'))
-        return Object.assign({}, message, { viewerClass: notice ? 'msg-assignment' : (adminNotice ? 'msg-admin-notice' : (own ? 'msg-own' : 'msg-other')), fromText: notice ? '人员分配通知' : label, isAssignmentNotice: notice, isAdminNotice: adminNotice })
+        return Object.assign({}, message, { viewerClass: notice ? 'msg-assignment' : ((own ? 'msg-own' : 'msg-other') + (adminNotice ? ' msg-admin-notice' : '')), fromText: notice ? '人员分配通知' : label, isAssignmentNotice: notice, isAdminNotice: adminNotice })
       })
       decorated.canReply = !decorated.isVoided && decorated.canReply
       var last = decorated.messages[decorated.messages.length - 1]
       self.setData({ item: decorated, loading: false, loadError: '', scrollIntoView: last ? 'msg-' + last.id : '' }, function () {
-        if (current()) unread.markRead(openid, id, self.data.role, decorated.messages)
+        if (current()) {
+          unread.markRead(openid, id, self.data.role, decorated.messages)
+          if (typeof api.memberRequest === 'function' && last) api.memberRequest('/api/portal/reads/' + encodeURIComponent(id), 'POST', { messageId: last.id }).catch(function () {})
+        }
       })
     }).catch(function (error) { if (current()) { var patch = { loading: false, loadError: error.message || '聊天加载失败，请重试。' }; if (['APPOINTMENT_FORBIDDEN', 'APPOINTMENT_NOT_FOUND', 'MEMBER_REQUIRED', 'SESSION_EXPIRED', 'REAL_LOGIN_REQUIRED'].indexOf(error.code) !== -1) patch.item = null; else if (self.data.item) patch.item = Object.assign({}, self.data.item, { canReply: false }); self.setData(patch) } })
   },
@@ -185,5 +194,17 @@ Page({
       .catch(function (error) { self._sendInFlight = false; if (current()) { self.setData({ sending: false, item: Object.assign({}, self.data.item, { canReply: false }) }); wx.showToast({ title: error.message || '图片发送失败，请重试', icon: 'none' }); return self.loadItem() } })
   },
   copyPhone: function (event) { var phone = String(event.currentTarget.dataset.phone || '').replace(/[^0-9+]/g, ''); if (phone) wx.setClipboardData({ data: phone, success: function () { wx.showToast({ title: '手机号已复制', icon: 'success' }) } }) },
-  previewImage: function (event) { var url = event.currentTarget.dataset.url; if (url) wx.previewImage({ urls: [url], current: url }) }
+  avatarError: function (event) {
+    if (!this._visible || !this.data.item) return
+    var id = String(event.currentTarget.dataset.id), list = this.data.item.messages.map(function (m) { return String(m.id) === id ? Object.assign({}, m, { senderAvatarUrl: '/images/my_avatar.png' }) : m })
+    this.setData({ 'item.messages': list })
+  },
+  chatImageError: function (event) {
+    if (!this._visible || !this.data.item) return
+    var id = String(event.currentTarget.dataset.id)
+    require('../../utils/chat-media').forget(event.currentTarget.dataset.source)
+    this.setData({ 'item.messages': this.data.item.messages.map(function (m) { return String(m.id) === id ? Object.assign({}, m, { imageFailed: true }) : m }) })
+  },
+  retryImage: function (event) { require('../../utils/chat-media').forget(event.currentTarget.dataset.source); return this.loadItem() },
+  previewImage: function (event) { var url = event.currentTarget.dataset.url; if (url) wx.previewImage({ urls: [url], current: url, fail: function () { wx.showToast({ title: '图片预览失败，请重新加载图片', icon: 'none' }) } }) }
 })

@@ -1,0 +1,29 @@
+@import "../../utils/portal.wxss";
+.avatar-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100% !important;
+  flex-shrink: 0;
+  margin: 0 auto 30rpx;
+  padding: 0;
+  line-height: 1.5;
+  background: transparent;
+}
+.avatar-image {
+  display: block;
+  flex-shrink: 0;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: #e8f8f7;
+}
+.avatar-picker::after { border: 0; }
+.avatar-note {
+  text-align: center;
+  color: #8496a4;
+  font-size: 24rpx;
+  margin-top: 20rpx;
+}

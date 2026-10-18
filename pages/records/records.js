@@ -5,6 +5,7 @@ var USE_BACKEND = true   // 切换:走后端 API / 本地存储
 
 Page({
   data: {
+    subscribeMode: false,
     allItems: [],
     items: [],
     currentFilter: 'all',
@@ -15,6 +16,7 @@ Page({
     ]
   },
 
+  onLoad: function (options) { this.setData({ subscribeMode: !!(options && options.subscribe === '1') }) },
   onNavigationTouchStart: function (event) { swipe.start(this, event) },
   onNavigationTouchMove: function (event) { swipe.move(this, event) },
   onNavigationTouchCancel: function () { swipe.cancel(this) },

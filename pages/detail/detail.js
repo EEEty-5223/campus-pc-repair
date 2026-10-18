@@ -5,6 +5,8 @@ var USE_BACKEND = true
 
 Page({
   data: {
+    evidence: null,
+    evidenceError: '',
     id: '',
     isRealAdmin: false,
     adminActionBusy: false,
@@ -31,10 +33,15 @@ Page({
   },
 
   onShow: function () {
+    this._subscriptionDisposed = false
     var self = this
     var app = getApp()
     this._detailVisible = true
     this._detailDisposed = false
+    if (this.data.role === 'admin') {
+      var direct = require('../../utils/direct-staff-subscription'), ready = app.globalData.loginReady
+      Promise.resolve(ready).then(function () { if (self._detailVisible) direct.prepare(self) }, function () {})
+    }
     var version = this._detailVersion = (this._detailVersion || 0) + 1
     this.setData({ completionCode: '', startCode: '', codeError: '', startCodeError: '', startCodeLoading: false })
     function load() { if (self._detailVisible && version === self._detailVersion) { var u = app.globalData || {}; self.setData({ isRealAdmin: u.role === 'admin' && !!u.notificationSession && !u.isSimulator, adminActionBusy: !!self._adminActionBusy }); return self.loadItem().then(function () { if (self._detailVisible && version === self._detailVersion) self.schedulePhasePolling() }) } }
@@ -47,8 +54,8 @@ Page({
       load()
     }
   },
-  onHide: function () { this.stopPhasePolling(); this._phaseCodeLoad = (this._phaseCodeLoad || 0) + 1; this._detailVisible = false; this._detailVersion = (this._detailVersion || 0) + 1; this._itemLoad = (this._itemLoad || 0) + 1; this._codeLoad = (this._codeLoad || 0) + 1; this._startCodeLoad = (this._startCodeLoad || 0) + 1; if (!this._detailDisposed) this.setData({ completionCode: '', startCode: '', startCodeLoading: false }) },
-  onUnload: function () { this._detailDisposed = true; this.onHide() },
+  onHide: function () { require('../../utils/direct-staff-subscription').hide(this); this.stopPhasePolling(); this._phaseCodeLoad = (this._phaseCodeLoad || 0) + 1; this._detailVisible = false; this._detailVersion = (this._detailVersion || 0) + 1; this._itemLoad = (this._itemLoad || 0) + 1; this._codeLoad = (this._codeLoad || 0) + 1; this._startCodeLoad = (this._startCodeLoad || 0) + 1; if (!this._detailDisposed) this.setData({ completionCode: '', startCode: '', startCodeLoading: false }) },
+  onUnload: function () { require('../../utils/direct-staff-subscription').dispose(this); this._detailDisposed = true; this.onHide() },
   detailIdentity: function () { var u = (getApp() && getApp().globalData) || {}; return [u.openid, u.notificationSession, this.data.id, this.data.role].join(':') },
   loadCompletionCode: function () { return this.loadPhaseCode() },
   loadStartCode: function () { return this.loadPhaseCode() },
@@ -100,7 +107,7 @@ Page({
     this._phaseCodeLoad = (this._phaseCodeLoad || 0) + 1
     this._codeLoad = (this._codeLoad || 0) + 1
     this._startCodeLoad = (this._startCodeLoad || 0) + 1
-    this.setData({ item: null, completionCode: '', startCode: '', codeError: '', codeLoading: false, startCodeError: '', startCodeLoading: false, loading: true, loadError: '' })
+    this.setData({ item: null, evidence: null, evidenceError: '', completionCode: '', startCode: '', codeError: '', codeLoading: false, startCodeError: '', startCodeLoading: false, loading: true, loadError: '' })
     var fetch = typeof api.getAppointment === 'function' ? api.getAppointment(id) : (this.data.role === 'admin' ? api.getAdminAppointments() : (openid ? api.getMyAppointments(openid) : Promise.reject(new Error('login required'))))
     return fetch.then(function (r) {
       if (!current()) return
@@ -108,8 +115,36 @@ Page({
       var item = r.item || r.list.find(function (x) { return x.id === id })
       if (!item) throw new Error('appointment missing')
       self.setData({ item: appointments.decorate ? appointments.decorate(item) : item, loading: false })
+      self.loadEvidence()
       return self.loadPhaseCode()
     }).catch(function () { if (current()) self.setData({ item: null, completionCode: '', startCode: '', loading: false, loadError: '预约暂时无法加载，请刷新重试。' }) })
+  },
+  subscribeMessages: function () { if (this.data.role === 'admin') return require('../../utils/direct-staff-subscription').tap(this); wx.navigateTo({ url: '/pages/subscriptions/subscriptions?id=' + encodeURIComponent(this.data.id) }) },
+  loadEvidence: function () {
+    var self = this, who = this.detailIdentity(), version = this._itemLoad, evidenceLoad = this._evidenceLoad = (this._evidenceLoad || 0) + 1
+    function current() { return self._detailVisible && who === self.detailIdentity() && version === self._itemLoad && evidenceLoad === self._evidenceLoad }
+    this.setData({ evidence: null, evidenceError: '' })
+    if (!this.data.item || this.data.item.status !== 'completed') return Promise.resolve()
+    var completion = require('../../utils/completion-api')
+    return completion.context(this.data.id).then(function (result) {
+      if (!current()) return
+      return completion.evidenceImages(result.completion).then(function (evidence) {
+        if (current()) self.setData({ evidence: evidence, evidenceError: evidence && evidence.photos.some(function (photo) { return photo.failed }) ? '部分完工照片加载失败' : '' })
+      })
+    }).catch(function (error) { if (current()) self.setData({ evidenceError: error.statusCode === 403 ? '' : '完工记录暂时无法加载' }) })
+  },
+  evidenceImageFailed: function () { this.setData({ evidenceError: '完工照片加载失败' }) },
+  previewEvidence: function (event) { var photos = this.data.evidence && this.data.evidence.photos || [], urls = photos.filter(function (p) { return p.url && !p.failed }).map(function (p) { return p.url }); if (urls.length) wx.previewImage({ current: event.currentTarget.dataset.url || urls[0], urls: urls }) },
+  resubmitEvidence: function () {
+    if (!this.data.evidence || !this.data.evidence.canResubmit || this._resubmitting) return
+    var self = this, who = this.detailIdentity()
+    wx.showModal({ title: '补充说明并重新审核', editable: true, placeholderText: '说明不方便拍照的原因与核实情况', confirmText: '重新提交', success: function (r) {
+      if (!r.confirm || !self._detailVisible || who !== self.detailIdentity() || self._resubmitting) return
+      var note = String(r.content || '').trim()
+      if (!note || note.length > 1000) { wx.showToast({ title: '请填写1至1000字说明', icon: 'none' }); return }
+      self._resubmitting = true
+      api.memberRequest('/api/appointments/' + encodeURIComponent(self.data.id) + '/completion/resubmit', 'POST', { note: note }).then(function () { if (who === self.detailIdentity() && self._detailVisible) return self.loadItem() }).catch(function (e) { if (self._detailVisible && who === self.detailIdentity()) wx.showToast({ title: e.message || '提交失败', icon: 'none' }) }).then(function () { self._resubmitting = false })
+    } })
   },
   forceStatus: adminActions.forceStatus,
   forceComplete: adminActions.forceComplete,

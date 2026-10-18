@@ -1,4 +1,5 @@
 <view class="page records-page" bindtouchstart="onNavigationTouchStart" bindtouchmove="onNavigationTouchMove" bindtouchend="onNavigationTouchEnd" bindtouchcancel="onNavigationTouchCancel">
+  <view wx:if="{{subscribeMode}}" class="subscription-picker-tip">请选择一笔进行中的预约，进入详情后点击“订阅一次本单消息”。每次授权只提醒一次。</view>
   <view class="navigation-hint">‹ 顶部右滑返回首页</view>
   <view class="records-head">
     <view>

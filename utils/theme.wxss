@@ -1,0 +1,9 @@
+/* Shared brand colors. Native navigation-bar colors are set in app.json. */
+page {
+  --color-primary: #0b8f89;
+  --color-primary-strong: #087f7b;
+  --color-primary-soft: #edf8f4;
+  --color-primary-border: #bde5d9;
+  --color-primary-tint: #dcf4eb;
+  --color-page: #f3f8f6;
+}

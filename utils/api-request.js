@@ -1,7 +1,7 @@
 // utils/api-request.js
 // 后端 API 封装:wx.login() → 发 /api/login → 拿到真实 openid
 
-// 真机预览、体验版和正式版统一连接线上服务，可使用手机流量。
+// 开发工具连接本机、真机预览连接局域网；体验版和正式版连接线上服务。
 const PRODUCTION_BASE_URL = 'https://campusapi.keon5223.xyz'
 // 仅本机开发工具启用独立测试账号，角色由本地数据库决定；真机使用微信登录。
 const LOCAL_DEV_MEMBER = true
@@ -82,6 +82,7 @@ function normalizeMessage(row) {
     from: row.from_role || row.from,
     senderOpenid: row.senderOpenid || '',
     senderName: row.senderName || '',
+    senderAvatar: row.senderAvatar || '',
     kind: ['assignment_notice', 'admin_notice', 'admin_intervention'].indexOf(row.kind) !== -1 ? row.kind : 'normal',
     assignmentPeople: Array.isArray(row.assignmentPeople) ? row.assignmentPeople : [],
     type: row.type || 'text',
@@ -139,6 +140,7 @@ function request(path, method, data) {
   return new Promise(function (resolve, reject) {
     wx.request({
       url: BASE_URL + path,
+      timeout: 15000,
       method: method || 'GET',
       data: data || {},
       header: {
@@ -147,6 +149,9 @@ function request(path, method, data) {
         'openid': (app && app.globalData && app.globalData.openid) || ''
       },
       success: function (r) {
+        if (r.statusCode < 200 || r.statusCode >= 300 || !r.data || typeof r.data.ok !== 'boolean') {
+          return reject(Object.assign(new Error((r.data && r.data.error) || '服务响应异常，请稍后重试'), { code: r.data && r.data.code, statusCode: r.statusCode }))
+        }
         if (r.data && r.data.ok !== undefined) {
           if (r.data.ok) {
             resolve(r.data)
@@ -177,6 +182,7 @@ function notificationRequest(path, method, data, publicConfig, ownProfile, route
     if (!publicConfig) header.Authorization = 'Bearer ' + session
     wx.request({
       url: BASE_URL + (routeOverride || (ownProfile ? '/api/admin/profile/me' : '/api/admin/notifications/' + path)),
+      timeout: 15000,
       method: method || 'GET',
       data: data || {},
       header: header,
@@ -198,6 +204,7 @@ function notificationRequest(path, method, data, publicConfig, ownProfile, route
 module.exports = {
   memberRequest: function (path, method, data) { return notificationRequest('', method, data, false, false, path) },
   getBackendBaseUrl: function () { return BASE_URL },
+  getMessageOverview: function () { return notificationRequest('', 'GET', {}, false, false, '/api/portal/unread') },
   silentLogin: silentLogin,
   request: request,
   normalizeAppointment: normalizeAppointment,
@@ -271,16 +278,15 @@ module.exports = {
   },
   // 修改预约内容(仅待确认可改)
   updateAppointment: function (id, data) {
-    return request('/api/appointments/update', 'POST', Object.assign({
+    return notificationRequest('', 'POST', Object.assign({
       id: id
-    }, data))
+    }, data), false, false, '/api/appointments/update')
   },
   // 返回的 list 已经是驼峰字段
   getMessages: function (id) {
     return request('/api/messages?appointmentId=' + id, 'GET').then(function (resp) {
       var list = (resp && resp.list) || []
-      resp.list = list.map(normalizeMessage)
-      return resp
+      return require('./chat-media').hydrate(list.map(normalizeMessage)).then(function (messages) { resp.list = messages; return resp })
     })
   },
   sendMessage: function (id, role, content) {
@@ -309,6 +315,7 @@ module.exports = {
     return new Promise(function (resolve, reject) {
       wx.uploadFile({
         url: BASE_URL + '/api/upload',
+        timeout: 30000,
         filePath: filePath,
         name: 'file',
         header: {
@@ -322,7 +329,7 @@ module.exports = {
           } catch (e) {
             return reject(new Error('上传返回格式错误'))
           }
-          if (data && data.ok) {
+          if (res.statusCode >= 200 && res.statusCode < 300 && data && data.ok && /^https?:\/\//i.test(data.url || '')) {
             resolve(data.url)
           } else {
             reject(new Error((data && data.error) || '上传失败'))

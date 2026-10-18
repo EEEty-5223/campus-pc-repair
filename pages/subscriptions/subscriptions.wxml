@@ -1,0 +1,25 @@
+<view class="portal-page">
+  <view class="portal-title">{{staff ? '后台总消息订阅' : '本单消息订阅'}}</view>
+  <view class="portal-subtitle">{{staff ? '提醒你权限范围内的新预约、预约进度变化和新聊天消息。' : '仅提醒这笔预约的状态变化和社团发来的新聊天消息。'}}</view>
+  <view wx:if="{{!staff}}" class="subscription-scope">预约编号：{{appointmentId}}</view>
+  <view class="portal-card">
+    <view class="subscribe-art">♧</view>
+    <view class="subscription-heading">订阅一次，及时知道新进展</view>
+    <view class="portal-tip">
+      <text class="once-emphasis">仅订阅一次消息</text>
+      <view>每次允许只增加一次提醒机会，{{staff ? '新预约、状态更新或新聊天' : '状态更新或新聊天'}}先发生的那一条会使用这次授权。用完后需要再次订阅，不能永久开启。</view>
+      <view wx:if="{{!staff}}">本次授权只用于上面这笔预约，不会用于其他预约。</view>
+    </view>
+    <view wx:if="{{loading}}" class="portal-state">正在检查订阅状态…</view>
+    <block wx:elif="{{status}}">
+      <view class="subscription-status">{{status.available ? ('已登记 ' + status.remaining + ' 次可用授权') : status.reason}}</view>
+      <view wx:if="{{staff && !status.available}}" class="subscription-availability-note">总消息订阅暂不可用，请稍后重试。原有“新预约提醒”仍可在社团工作站使用。</view>
+      <view wx:if="{{status.available && status.lastState}}" class="portal-row-desc">最近发送：{{status.lastState === 'sent' ? '微信接口已接受' : (status.lastState === 'uncertain' ? '结果暂不确定，请查看微信服务通知' : (status.lastState === 'failed' ? '未发送成功，可重新订阅' : '处理中或已暂停'))}}</view>
+    </block>
+    <view wx:if="{{error}}" class="portal-state portal-error">{{error}}</view>
+    <button wx:if="{{pending || (status.available && !loading)}}" class="portal-primary" bindtap="subscribe" loading="{{busy}}" disabled="{{busy}}">{{pending ? '重试登记' : '订阅一次消息'}}</button>
+    <button class="portal-secondary" bindtap="load" disabled="{{loading || busy}}">刷新状态</button>
+    <view class="subscription-actions"><text bindtap="settings">微信消息设置</text><text wx:if="{{status.remaining > 0}}" bindtap="pause">暂停本范围提醒</text></view>
+    <view class="portal-row-desc">提醒显示在微信“服务通知”中。实际发送次数以微信为准；退出小程序后也可以接收。</view>
+  </view>
+</view>

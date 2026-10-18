@@ -31,7 +31,7 @@ function fixture(options = {}) {
     vm.runInNewContext(fs.readFileSync(path.join(root, relativePath), 'utf8'), {
       Page: value => { definition = value }, wx, getApp: () => app, setInterval: () => 1, clearInterval() {},
       console: { error: () => {} },
-      require: name => name.includes('chat-unread') ? { overview: () => Promise.resolve({ total: 0, counts: {}, items: [] }) } : name.includes('api-request') ? api : {
+      require: name => name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('chat-unread') ? { overview: () => Promise.resolve({ total: 0, counts: {}, items: [] }) } : name.includes('api-request') ? api : {
         list: () => { calls.localReads++; return [{ id: 'local-demo' }, { id: 'local-demo-2' }] },
         decorate: item => Object.assign({}, item, { canEdit: true })
       }
@@ -117,7 +117,7 @@ test('home count failure clears previous count and never presents local demo rec
   assert.equal(home.data.recordCountError, true)
   assert.equal(f.calls.localReads, 0)
   home.goRecords()
-  assert.equal(f.calls.tabs.at(-1), '/pages/records/records')
+  assert.equal(f.calls.routes.at(-1), '/pages/records/records')
 })
 
 test('home count retry uses backend data and clears error', async () => {
@@ -166,8 +166,8 @@ test('all existing home destinations remain available', () => {
   const f = fixture()
   const home = f.page('pages/index/index.js')
   home.goBooking(); home.goConsult(); home.goAdmin(); home.goApply(); home.goRecords()
-  assert.deepEqual(f.calls.routes, ['/pages/booking/booking', '/pages/consult/consult', '/pages/admin/admin', '/pages/apply/apply'])
-  assert.deepEqual(f.calls.tabs, ['/pages/records/records'])
+  assert.deepEqual(f.calls.routes, ['/pages/booking/booking', '/pages/consult/consult', '/pages/admin/admin', '/pages/apply/apply', '/pages/records/records'])
+  assert.deepEqual(f.calls.tabs, [])
 })
 
 test('service cards are native accessible buttons with bound action and press feedback', () => {
