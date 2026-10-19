@@ -11,14 +11,15 @@
     <view wx:if="{{startCode}}" class="completion-code">{{startCode}}</view>
     <view wx:elif="{{startCodeLoading}}" class="completion-note">正在加载开工码…</view>
     <view wx:else class="completion-error">{{startCodeError || '开工码暂不可用'}}<button class="secondary-button" bindtap="loadStartCode">刷新开工码</button></view>
-    <view class="completion-note">维修人员到场、你同意开始维修后再提供。可提前保存，尚未到场请勿提前告知；开工后显示独立完成码。</view>
+    <view class="completion-note">请先确认维修方案、费用和重要数据备份，维修人员到场且你同意开始维修后，再提供开工码。重装系统、格式化等操作还需单独取得你的明确同意。</view>
+    <view class="service-terms-link" bindtap="goServiceTerms">查看《维修服务说明与风险告知》 ›</view>
   </view>
   <view wx:if="{{role === 'user' && !item.isVoided && item.status === 'repairing'}}" class="card completion-code-card">
     <view class="detail-section-title">维修完成确认码</view>
     <view wx:if="{{completionCode}}" class="completion-code">{{completionCode}}</view>
     <view wx:elif="{{codeLoading}}" class="completion-note">正在加载确认码…</view>
     <view wx:else class="completion-error">{{codeError || '确认码暂不可用'}}<button class="secondary-button" bindtap="loadCompletionCode">刷新确认码</button></view>
-    <view class="completion-note">请在维修完成并确认后，再将此码告知服务人员。完成预约后此码失效。</view>
+    <view class="completion-note">请在维修完成并确认结果后，再将此码告知服务人员。完成预约后此码失效；提供完成码不代表放弃依法提出异议或追究责任的权利。</view>
   </view>
 
   <view wx:if="{{item.isVoided}}" class="void-note card"><view>预约已作废，当前仅可查看历史。</view><view>原因：{{item.voidReason}}</view></view>

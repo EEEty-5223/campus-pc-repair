@@ -1,23 +1,2 @@
-<view class="page privacy-page">
-  <view class="card article-card">
-    <view class="article-title">信息使用说明</view>
-    <view class="updated">更新日期：2026-10-18</view>
-
-    <view class="article-heading">1. 收集哪些信息</view>
-    <view class="article-text">为完成电脑维修预约，由用户主动填写姓名、手机号、校内联系地点、设备类型、故障描述和预约时间。</view>
-    <view class="article-text">你还可以主动设置头像和昵称、收藏指南文章。预约沟通记录及已读位置用于展示消息；维修人员提交完工照片或免拍照说明，用于记录维修结果与特殊单审核。</view>
-
-    <view class="article-heading">2. 为什么收集</view>
-    <view class="article-text">预约信息用于联系预约人、判断故障范围、安排服务和反馈处理进度。头像、昵称和收藏用于个人中心；完工照片及免拍照说明用于维修记录与审核。请避免在照片中拍入私人文件或保密内容，不方便拍照时可向维修人员说明。</view>
-
-    <view class="article-heading">3. 数据保存位置</view>
-    <view class="article-text">正式服务通过HTTPS传输，数据保存在社团服务器。预约与完工资料按预约本人和社团人员权限提供访问，完工照片使用有时限的访问地址。主动上传作为头像或文章配图的图片用于相应展示，请选择可以公开的内容。</view>
-    <view class="article-text">你主动允许订阅后，服务会向微信提交接收标识与相应的服务提醒内容，由微信服务通知送达。一次性订阅每次仅增加一次提醒机会，用户端授权只用于所选预约，后台按账号权限范围处理。</view>
-
-    <view class="article-heading">4. 安全提醒</view>
-    <view class="article-text">请勿在故障描述中填写账号、密码、验证码、支付信息等敏感内容。送修前请自行备份重要资料。</view>
-
-    <view class="article-heading">5. 数据删除与投诉</view>
-    <view class="article-text">如需删除预约记录或对信息使用有疑问，可通过小程序内的沟通功能联系社团成员处理。</view>
-  </view>
-</view>
+<import src="../../utils/service-document.wxml"/>
+<template is="service-document" data="{{document,loading,error}}"/>

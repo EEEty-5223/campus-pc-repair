@@ -33,8 +33,8 @@ test('chat uses authenticated sender identity, named teammates and structured as
  const page = { ...definition, data: { ...definition.data, id: 'p', role: 'admin' }, _requestedAdmin: true, _visible: true, setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } }
  await page.loadItem(); const result = page.data.item.messages
  assert.equal(result[0].viewerClass, 'msg-own'); assert.equal(result[1].viewerClass, 'msg-other'); assert.equal(result[1].fromText, '随行同学')
- assert.equal(result[2].viewerClass, 'msg-admin-notice'); assert.equal(result[3].isAssignmentNotice, true); assert.equal(result[4].isAssignmentNotice, false); assert.equal(page.data.item.canReply, false)
- assert.equal(result[5].viewerClass,'msg-admin-notice');assert.equal(result[5].isAdminNotice,true)
+ assert.match(result[2].viewerClass, /msg-admin-notice/); assert.equal(result[3].isAssignmentNotice, true); assert.equal(result[4].isAssignmentNotice, false); assert.equal(page.data.item.canReply, false)
+ assert.match(result[5].viewerClass, /msg-admin-notice/);assert.equal(result[5].isAdminNotice,true)
  page.copyPhone({ currentTarget: { dataset: { phone: '138 0000 0000' } } }); assert.deepEqual(copied, ['13800000000'])
 })
 
@@ -47,7 +47,7 @@ test('participating admin uses ordinary own/other text and image bubbles while o
   const page = { ...definition, data: { ...definition.data, id: 'p' }, _requestedAdmin: openid === 'admin', _visible: true, setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } }
   await page.loadItem(); const rows = page.data.item.messages
   for (const message of rows.slice(0, 2)) { assert.equal(message.viewerClass, openid === 'admin' ? 'msg-own' : 'msg-other'); assert.equal(message.isAdminNotice, false); assert.equal(message.fromText, '胡桃') }
-  assert.equal(rows[2].viewerClass, 'msg-admin-notice'); assert.equal(rows[2].isAdminNotice, true)
+  assert.match(rows[2].viewerClass, /msg-admin-notice/); assert.equal(rows[2].isAdminNotice, true)
  }
 })
 test('voided appointments always decorate as hidden-state read-only, even if backend canReply is true', () => {

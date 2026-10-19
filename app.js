@@ -41,7 +41,7 @@ App({
   },
   globalData: {
     appName: '校园电脑维修预约',
-    version: '1.3.0',
+    version: '1.3.1',
     // 登录后填
     openid: '',
     isAdmin: false,

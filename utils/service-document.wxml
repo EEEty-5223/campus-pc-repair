@@ -1,0 +1,15 @@
+<template name="service-document">
+  <view class="page service-document-page">
+    <view wx:if="{{loading}}" class="card document-state">正在加载说明…</view>
+    <view wx:elif="{{error}}" class="card document-state"><view>{{error}}</view><button class="secondary-button" bindtap="loadDocument">重新加载</button></view>
+    <view wx:elif="{{document}}" class="card document-article">
+      <view class="document-title">{{document.title}}</view>
+      <view class="document-version">版本 {{document.version}} · 更新于 {{document.updatedAt}}</view>
+      <view class="document-text">{{document.introduction}}</view>
+      <view wx:for="{{document.sections}}" wx:for-item="section" wx:key="title" class="document-section">
+        <view class="document-heading">{{section.title}}</view>
+        <view wx:for="{{section.paragraphs}}" wx:for-item="paragraph" wx:key="text" class="document-text {{paragraph.important ? 'document-important' : ''}}">{{paragraph.text}}</view>
+      </view>
+    </view>
+  </view>
+</template>

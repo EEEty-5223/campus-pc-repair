@@ -55,7 +55,7 @@ function fixture(options = {}) {
     vm.runInNewContext(fs.readFileSync(path.join(root, relativePath), 'utf8'), {
       Page: value => { definition = value }, getApp: () => ({ globalData: user }), wx, Promise, console,
       setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
-      require: name => name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { overview: () => Promise.resolve({ total: 0, counts: {}, items: [] }), markRead() {} } : name.includes('admin-notifications') ? { data: {}, methods: {} } : name.includes('member-removal-ui') ? { canRemove: () => false, methods: { loadRemovalRequests: () => Promise.resolve() } } : name.includes('member-session') ? session : name.includes('members') ? members : name.includes('api-request') ? api : {}
+      require: name => name.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) : name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { overview: () => Promise.resolve({ total: 0, counts: {}, items: [] }), markRead() {} } : name.includes('admin-notifications') ? { data: {}, methods: {} } : name.includes('member-removal-ui') ? { canRemove: () => false, methods: { loadRemovalRequests: () => Promise.resolve() } } : name.includes('member-session') ? session : name.includes('members') ? members : name.includes('api-request') ? api : {}
     })
     const instance = Object.assign({}, definition, { data: clone(definition.data) })
     instance.setData = patch => Object.assign(instance.data, clone(patch))
@@ -225,8 +225,7 @@ async function main() {
     const home = returning.page('pages/index/index.js')
     home.onShow(); await tick()
     assert.strictEqual(home.data.isAdmin, true, role + ' retains the club-backend entry after personal detail')
-    home.goAdmin()
-    assert.strictEqual(returning.calls.navigation[0], '/pages/admin/admin')
+    assert.strictEqual(typeof home.goAdmin, 'undefined', 'club entry now belongs to personal center')
   }
 
   const apiModule = { exports: {} }, requests = [], user = { openid: 'self', notificationSession: 'signed-test-session' }

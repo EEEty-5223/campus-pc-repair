@@ -162,11 +162,11 @@ test('older request cannot overwrite latest backend count or switched account', 
   assert.equal(home.data.recordCount, null)
 })
 
-test('all existing home destinations remain available', () => {
+test('home keeps booking, consultation and records while club entry belongs to personal center', () => {
   const f = fixture()
   const home = f.page('pages/index/index.js')
-  home.goBooking(); home.goConsult(); home.goAdmin(); home.goApply(); home.goRecords()
-  assert.deepEqual(f.calls.routes, ['/pages/booking/booking', '/pages/consult/consult', '/pages/admin/admin', '/pages/apply/apply', '/pages/records/records'])
+  home.goBooking(); home.goConsult(); home.goRecords()
+  assert.deepEqual(f.calls.routes, ['/pages/booking/booking', '/pages/consult/consult', '/pages/records/records'])
   assert.deepEqual(f.calls.tabs, [])
 })
 

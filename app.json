@@ -21,7 +21,8 @@
     "pages/guide-manage/guide-manage",
     "pages/guide-edit/guide-edit",
     "pages/subscriptions/subscriptions",
-    "pages/help/help"
+    "pages/help/help",
+    "pages/service-terms/service-terms"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0ca9a9",

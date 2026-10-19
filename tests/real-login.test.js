@@ -19,7 +19,7 @@ function fixture(options={}) {
   };
   const module={exports:{}};
   const consoleStub={log(){},warn(){},error(){}};
-  vm.runInNewContext(source('utils/api-request.js'),{module,wx,getApp:()=>app,Promise,console:consoleStub});
+  vm.runInNewContext(source('utils/api-request.js'),{module,wx,getApp:()=>app,Promise,console:consoleStub,require:n=>{if(n==='./chat-media')return {hydrate:rows=>Promise.resolve(rows)};throw Error('Unexpected dependency '+n)}});
   const api=module.exports;
   vm.runInNewContext(source('app.js'),{App:value=>{app=value;},require:name=>name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('api-request')?api:{clearDemoData(){}},Promise,console:consoleStub});
   vm.runInNewContext(source('pages/index/index.js'),{Page:value=>{page=value;},require:name=>name.includes('portal-api') ? { identity: () => 'fixture', call: () => Promise.resolve({ list: [] }), article: x => x, articles: rows => Promise.resolve(rows) } : name.includes('chat-unread')?{overview:()=>Promise.resolve({total:0,counts:{},items:[]})}:name.includes('api-request')?api:{},getApp:()=>app,wx,Promise,setInterval:()=>1,clearInterval(){},console:consoleStub});

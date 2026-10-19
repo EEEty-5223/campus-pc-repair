@@ -26,7 +26,7 @@ function fixture() {
   }
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/chat/chat.js'), 'utf8'), {
     Page: definition => { page = definition },
-    require: () => ({}), wx, clearTimeout, setTimeout
+    require: name => name.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) : ({}), wx, clearTimeout, setTimeout
   })
   page.data = JSON.parse(JSON.stringify(page.data))
   page.setData = patch => { patches.push(patch); Object.assign(page.data, patch) }

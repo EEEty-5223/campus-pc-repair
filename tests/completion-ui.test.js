@@ -5,7 +5,7 @@ function fixture(){
  const item={id:'appt',status:'repairing',assignedOpenid:'member',assignedActiveCount:1};
  const api={getCompletionCode:()=>{calls.codeReads++;return Promise.resolve({completionCode:'0037'});},getMyAppointments:()=>{calls.myReads++;return Promise.resolve({list:[{...item}]});},getAdminAppointments:()=>{calls.adminReads++;return Promise.resolve({list:[{...item}]});},updateStatus:(...args)=>{calls.updates.push(args);return Promise.resolve({ok:true});}};
  const wx={showModal:o=>calls.modals.push(o),showToast:o=>calls.toasts.push(o),navigateTo:o=>{calls.navigation=o.url;}};
- function load(file){const module={exports:{}};let page;vm.runInNewContext(fs.readFileSync(path.join(root,file),'utf8'),{module,Page:p=>page=p,require:n=>n.includes('api-request')?api:n.includes('assignment-ui')?{withPage:p=>p}:n.includes('admin-notifications')?{data:{},methods:{}}:{decorate:x=>({...x})},getApp:()=>({globalData:user}),wx,Promise,console});return page||module.exports;}
+ function load(file){const module={exports:{}};let page;vm.runInNewContext(fs.readFileSync(path.join(root,file),'utf8'),{module,Page:p=>page=p,require: n => n.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) :n.includes('api-request')?api:n.includes('assignment-ui')?{withPage:p=>p}:n.includes('admin-notifications')?{data:{},methods:{}}:{decorate:x=>({...x})},getApp:()=>({globalData:user}),wx,Promise,console});return page||module.exports;}
  const status=load('utils/appointment-status-ui.js'),page={data:{allItems:[item]},_chatVisible:true,_chatVisibilityVersion:1,setData(p){Object.assign(this.data,p)},loadItems(){calls.refresh++;return Promise.resolve();}};
  function detail(role='user'){const definition=load('pages/detail/detail.js');const d={...definition,data:{...definition.data,id:'appt',role},setData(p){Object.assign(this.data,p)}};return d;}
  return{user,calls,api,item,status,page,detail,load};
@@ -39,7 +39,7 @@ test('start response racing with workshop arrival switches to completion code wi
 test('phase polling reloads changed status and stops on hide',async()=>{
  const f=fixture(),timers=new Map();let timerId=0,definition;
  f.api.getAppointment=async()=>({item:{...f.item}});f.api.getStartCode=async()=>({startCode:'0017'});f.item.status='accepted';
- vm.runInNewContext(fs.readFileSync(path.join(root,'pages/detail/detail.js'),'utf8'),{Page:p=>definition=p,require:n=>n.includes('api-request')?f.api:{decorate:x=>({...x})},getApp:()=>({globalData:f.user}),Promise,console,setTimeout:callback=>{timers.set(++timerId,callback);return timerId;},clearTimeout:id=>timers.delete(id)});
+ vm.runInNewContext(fs.readFileSync(path.join(root,'pages/detail/detail.js'),'utf8'),{Page:p=>definition=p,require: n => n.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) :n.includes('api-request')?f.api:{decorate:x=>({...x})},getApp:()=>({globalData:f.user}),Promise,console,setTimeout:callback=>{timers.set(++timerId,callback);return timerId;},clearTimeout:id=>timers.delete(id)});
  const d={...definition,data:{...definition.data,id:'appt',role:'user'},_detailVisible:true,_detailVersion:1,setData(p){Object.assign(this.data,p)}};
  await d.loadItem();d.schedulePhasePolling();f.item.status='repairing';const callback=[...timers.values()][0];timers.clear();callback();await tick();
  assert.equal(d.data.startCode,'');assert.equal(d.data.completionCode,'0037');assert.equal(timers.size,1);d.onHide();assert.equal(timers.size,0);assert.equal(d.data.completionCode,'');

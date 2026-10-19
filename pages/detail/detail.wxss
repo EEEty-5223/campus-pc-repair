@@ -310,3 +310,4 @@
 .history-reason { color: #475569; font-size: 25rpx; margin-top: 10rpx; word-break: break-all; }
 
 .subscription-detail-entry{color:var(--color-primary-strong, #087f7b);font-size:29rpx;font-weight:600}.subscription-detail-entry .completion-note{font-weight:400}.evidence-photos{display:flex;gap:16rpx;flex-wrap:wrap;margin-top:20rpx}.evidence-photos image{width:180rpx;height:180rpx;border-radius:16rpx}
+.service-terms-link{font-size:25rpx;line-height:1.8;margin-top:16rpx;color:var(--color-primary-strong,#087f7b);font-weight:600}

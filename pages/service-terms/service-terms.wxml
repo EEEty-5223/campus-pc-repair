@@ -1,0 +1,2 @@
+<import src="../../utils/service-document.wxml"/>
+<template is="service-document" data="{{document,loading,error}}"/>

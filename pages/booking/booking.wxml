@@ -66,17 +66,20 @@
       </view>
     </view>
 
-    <checkbox-group class="agreement" name="agreement">
+    <view class="booking-risk-note">维修前请备份重要资料。重装系统、格式化等操作，以及维修方案和费用，均需事先与你确认。</view>
+    <view wx:if="{{documentsLoading}}" class="agreement-state">正在加载服务说明…</view>
+    <view wx:elif="{{documentsError}}" class="agreement-state agreement-error">{{documentsError}}<text bindtap="loadServiceDocuments"> 点击重试</text></view>
+    <checkbox-group class="agreement" name="agreement" bindchange="onAgreementChange">
       <label class="agreement-label">
-        <checkbox value="agreed" checked="{{isEditing}}" color="#0b8f89" />
+        <checkbox value="agreed" checked="{{consentAgreed}}" disabled="{{!documentsReady || documentsLoading}}" color="#0b8f89" />
         <text>我已阅读并同意</text>
       </label>
-      <text class="privacy-link" bindtap="goPrivacy">《信息使用说明》</text>
+      <text class="privacy-link" bindtap="goServiceTerms">《维修服务说明与风险告知》</text><text>和</text><text class="privacy-link" bindtap="goPrivacy">《信息使用说明》</text>
     </checkbox-group>
 
     <view class="form-actions">
       <button class="secondary-button" bindtap="saveDraft" wx:if="{{!isEditing}}">保存草稿</button>
-      <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting}}">{{isEditing ? '保存修改' : '提交预约'}}</button>
+      <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting || !documentsReady || documentsLoading}}">{{isEditing ? '保存修改' : '提交预约'}}</button>
     </view>
   </form>
 </view>

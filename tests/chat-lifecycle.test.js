@@ -25,7 +25,7 @@ function fixture(options = {}) {
   }
   const appointments = { decorate: item => Object.assign({}, item, { canReply: true, hasMessages: !!item.messages.length }) }
   vm.runInNewContext(fs.readFileSync(path.join(root, 'pages/chat/chat.js'), 'utf8'), {
-    Page: definition => { page = definition }, getApp: () => app, require: name => name.includes('api-request') ? api : name.includes('chat-unread') ? unread : appointments,
+    Page: definition => { page = definition }, getApp: () => app, require: name => name.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) : name.includes('api-request') ? api : name.includes('chat-unread') ? unread : appointments,
     wx, Promise, console, setTimeout: callback => { const id = nextTimer++; timers.set(id, callback); return id }, clearTimeout: id => { timers.delete(id) }
   })
   page.data = clone(page.data)

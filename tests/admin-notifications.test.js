@@ -64,7 +64,7 @@ function fixture(options = {}) {
   vm.runInNewContext(source, { module, require: () => api, wx, getApp: () => app, Promise, Date })
   vm.runInNewContext(pageSource, {
     Page: value => { definition = value },
-    require: name => name.includes('admin-special-orders') ? { data: {}, methods: { loadSpecialSummary: () => Promise.resolve() } } : name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { markRead() {} } : name.includes('admin-notifications') ? module.exports : name.includes('api-request') ? api : {
+    require: name => name.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) : name.includes('admin-special-orders') ? { data: {}, methods: { loadSpecialSummary: () => Promise.resolve() } } : name.includes('assignment-ui') ? { withPage: page => page } : name.includes('chat-unread') ? { markRead() {} } : name.includes('admin-notifications') ? module.exports : name.includes('api-request') ? api : {
       decorate: x => x, list: () => { throw new Error('Must not show stale demo data after API error') }
     },
     getApp: () => app, wx, console: { error() {} }, Promise, setTimeout: () => 1, clearTimeout() {}
@@ -325,7 +325,7 @@ async function main() {
   let appDefinition, loginLog
   vm.runInNewContext(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), {
     App: data => { appDefinition = data },
-    require: name => name.includes('api-request') ? { silentLogin: () => Promise.resolve({ openid: 'real-user', role: 'admin', notificationSession: 'private-test-session' }) } : {},
+    require: name => name.includes('direct-staff-subscription') ? ({prepare:()=>Promise.resolve(),hide(){},dispose(){},tap(){}}) : name.includes('api-request') ? { silentLogin: () => Promise.resolve({ openid: 'real-user', role: 'admin', notificationSession: 'private-test-session' }) } : {},
     console: { log: (...args) => { loginLog = args }, error() {} }, Promise
   })
   appDefinition.onLaunch(); await appDefinition.globalData.loginReady

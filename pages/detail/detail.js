@@ -25,6 +25,7 @@ Page({
     scrollIntoView: ''
   },
 
+  goServiceTerms: function () { wx.navigateTo({ url: '/pages/service-terms/service-terms' }) },
   onLoad: function (options) {
     this.setData({
       id: options.id || '',

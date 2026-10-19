@@ -121,3 +121,4 @@
   padding: 0 24rpx;
   margin-top: 24rpx;  /* ← 跟上方 checkbox 的距离 */
 }
+.booking-risk-note{margin:24rpx 0 16rpx;padding:22rpx;background:#fff8e8;color:#78350f;font-size:25rpx;line-height:1.8;border-radius:14rpx}.agreement-state{font-size:24rpx;line-height:1.8;color:#64748b;margin-bottom:16rpx}.agreement-error{color:#b42318}.agreement{flex-wrap:wrap;line-height:1.8}.agreement .privacy-link{margin-left:0;white-space:normal;word-break:break-all}

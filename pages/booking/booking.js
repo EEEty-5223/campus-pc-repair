@@ -1,5 +1,6 @@
 var appointments = require('../../utils/appointments')
 var api = require('../../utils/api-request.js')
+var serviceDocuments = require('../../utils/service-documents')
 var USE_BACKEND = true   // 切换:走后端 API / 本地存储
 var DRAFT_KEY = 'campus…t_v1'
 var SERVICE_FAULTS = {
@@ -68,9 +69,45 @@ Page({
       description: ''
     },
     submitting: false,
+    consentAgreed: false,
+    documentsReady: false,
+    documentsLoading: true,
+    documentsError: '',
     dirty: false//查询是否保存过
 
   },
+  onShow: function () {
+    this._consentVisible = true
+    var user = (getApp() && getApp().globalData) || {}, viewer = [user.openid, user.notificationSession].join(':')
+    if (this._consentViewer !== viewer) { this._consentViewer = viewer; this.setData({ consentAgreed: false }) }
+    this.restoreDraftAlert()
+    this.loadServiceDocuments()
+  },
+  onHide: function () { this._consentVisible = false; this._documentsRequest = (this._documentsRequest || 0) + 1 },
+  onUnload: function () { this.onHide() },
+  loadServiceDocuments: function () {
+    var self = this, request = this._documentsRequest = (this._documentsRequest || 0) + 1
+    this.setData({ documentsLoading: true, documentsError: '' })
+    return serviceDocuments.load().then(function (docs) {
+      if (!self._consentVisible || request !== self._documentsRequest) return
+      var changed = serviceDocuments.fingerprint(docs) !== serviceDocuments.fingerprint(self._serviceDocuments)
+      self._serviceDocuments = docs
+      self.setData({ documentsReady: true, documentsLoading: false, consentAgreed: changed ? false : self.data.consentAgreed })
+    }).catch(function (error) {
+      if (!self._consentVisible || request !== self._documentsRequest) return
+      self._serviceDocuments = null; self.setData({ documentsReady: false, documentsLoading: false, consentAgreed: false, documentsError: error.message || '说明加载失败，请重试' })
+    })
+  },
+  onAgreementChange: function (event) {
+    this.setData({ consentAgreed: this.data.documentsReady && !this.data.documentsLoading && (event.detail.value || []).indexOf('agreed') !== -1 })
+  },
+  restoreDraftAlert: function () { if (this.data.dirty && wx.enableAlertBeforeUnload) wx.enableAlertBeforeUnload({ message: '您填写的内容尚未保存，确定要离开吗？' }) },
+  openDocument: function (url) {
+    var self = this
+    if (wx.disableAlertBeforeUnload) wx.disableAlertBeforeUnload()
+    wx.navigateTo({ url: url, fail: function () { self.restoreDraftAlert() } })
+  },
+  goServiceTerms: function () { this.openDocument('/pages/service-terms/service-terms') },
   onFormInput: function (event) {
     var field = event.currentTarget.dataset.field
     var formData = Object.assign({}, this.data.formData)
@@ -230,27 +267,7 @@ Page({
   },
 
   goPrivacy: function () {
-    if (!this.data.dirty) {
-      wx.navigateTo({ url: '/pages/privacy/privacy' })
-      return
-    }
-    var that = this
-    wx.showModal({
-      title: '内容未保存',
-      content: '是否保存当前填写的内容？',
-      cancelText: '不保存',
-      confirmText: '保存草稿',
-      success: function (res) {
-        if (res.confirm) {
-          that.saveDraft()
-        }
-        that.setData({ dirty: false })
-        if (wx.disableAlertBeforeUnload) {
-          wx.disableAlertBeforeUnload()
-        }
-        wx.navigateTo({ url: '/pages/privacy/privacy' })
-      }
-    })
+    this.openDocument('/pages/privacy/privacy')
   },
 
   submitBooking: function (event) {
@@ -277,8 +294,11 @@ Page({
     if (description.length < 5) {
       return this.showError('请至少用 5 个字描述故障现象')
     }
-    if (!agreed) {
-      return this.showError('请先阅读并同意信息使用说明')
+    if (!this.data.documentsReady || this.data.documentsLoading || !this._serviceDocuments) {
+      return this.showError('请先加载并阅读两份说明')
+    }
+    if (!agreed || !this.data.consentAgreed) {
+      return this.showError('请阅读并同意两份服务说明')
     }
     if (this.data.appointmentDate < this.data.minDate) {
       return this.showError('请选择今天或之后的日期')
@@ -291,7 +311,8 @@ Page({
       faultType: this.data.faultTypes[this.data.faultIndex],
       description: description,
       appointmentDate: this.data.appointmentDate,
-      timeSlot: this.data.timeSlots[this.data.timeIndex]
+      timeSlot: this.data.timeSlots[this.data.timeIndex],
+      consent: serviceDocuments.consent(this._serviceDocuments)
     }
 
     if (appointments.hasActiveDuplicate(
@@ -335,7 +356,8 @@ Page({
         faultType: payload.faultType,
         description: payload.description,
         date: payload.appointmentDate,
-        timeSlot: payload.timeSlot
+        timeSlot: payload.timeSlot,
+        consent: payload.consent
       }
 
       var doPromise = self.data.isEditing
@@ -347,12 +369,14 @@ Page({
             faultType: payload.faultType,
             description: payload.description,
             date: payload.appointmentDate,
-            timeSlot: payload.timeSlot
+            timeSlot: payload.timeSlot,
+            consent: payload.consent
           })
         : api.createAppointment(remotePayload)
 
       doPromise
         .then(function (resp) {
+          if (!resp || resp.consentRecorded !== true) throw new Error('服务说明确认未能登记，请重新提交')
           self.setData({ submitting: false })
           wx.showModal({
             title: self.data.isEditing ? '修改已保存' : '预约已提交',
@@ -381,6 +405,7 @@ Page({
         })
         .catch(function (err) {
           self.setData({ submitting: false })
+          if (err.code === 'SERVICE_DOCUMENTS_CHANGED') { self.setData({ consentAgreed: false }); self.loadServiceDocuments() }
           self.showError('后端保存失败:' + (err.message || err))
         })
       return
