@@ -61,6 +61,7 @@ function cardOptions(item, role, realAdmin) {
 function cardSnapshot(item) { return JSON.stringify([item.id, item.status, !!item.isVoided, item.assignedOpenid, item.assistantOpenids, item.assignedActiveCount]) }
 
 Page(assignmentUI.withPage(Object.assign({
+  openCases: function () { wx.navigateTo({ url: '/pages/case-manage/case-manage' }) },
   data: Object.assign({}, notifications.data, specialOrders.data, {
     activeTab: 'appointments',
     totalSubscriptionBusy: false,

@@ -5,6 +5,7 @@ var swipe = require('../../utils/swipe-navigation')
 var USE_BACKEND = true
 
 Page({
+  goCases: function () { wx.navigateTo({ url: '/pages/cases/cases' }) },
   data: {
     recordCount: null,
     recordCountLoading: true,

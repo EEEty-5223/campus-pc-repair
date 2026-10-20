@@ -30,6 +30,7 @@
   </view>
 
   <view class="backend-tools" wx:if="{{role === 'admin' || role === 'leader' || role === 'member'}}" data-swipe-scope="ignore" bindtouchstart="onNavigationTouchStart">
+    <button wx:if="{{role === 'admin' || role === 'leader'}}" class="backend-tool" bindtap="openCases"><text>维修案例管理</text><text class="tool-meta">整理与发布</text><text class="tool-arrow">›</text></button>
     <button class="backend-tool" bindtap="openTotalSubscriptions" loading="{{totalSubscriptionBusy}}" disabled="{{totalSubscriptionBusy}}"><text>总消息订阅</text><text class="tool-meta">{{totalSubscriptionLabel}}</text><text class="tool-arrow">›</text></button>
   </view>
   <view class="navigation-hint">左右滑动顶部或栏目栏切换栏目</view>

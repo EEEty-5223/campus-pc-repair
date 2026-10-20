@@ -3,12 +3,12 @@
   <view class="card state" wx:elif="{{loadError}}"><view>{{loadError}}</view><button class="secondary-button" bindtap="loadItem">重试</button></view>
   <view wx:elif="{{success}}" class="card success-card">
     <view class="success-symbol">✓</view><view class="title">预约已完成</view>
-    <view class="hint">{{reviewPending ? '本单已提交特殊单审核，所属部门负责人或管理员可继续审核。' : (mode === 'no_photo' ? '免拍照完工记录已提交。' : '完工照片与完成记录已提交。')}}</view>
+    <view class="hint">{{reviewPending ? '本单已提交特殊单审核，所属部门负责人或管理员可继续审核。' : (codeOnly ? '用户完成码已核验，维修完成记录已提交。' : (mode === 'no_photo' ? '免拍照完工记录已提交。' : '完工照片与完成记录已提交。'))}}</view>
     <button class="primary-button" bindtap="goBack">返回后台</button>
   </view>
   <block wx:elif="{{item}}">
     <view class="card job-summary"><view class="title">{{item.name}} · {{item.deviceType}}</view><view class="hint">{{item.faultType}} · {{item.location}}</view></view>
-    <view class="steps"><text class="{{step === 'evidence' ? 'step-active' : ''}}">1 完工照片</text><text> → </text><text class="{{step === 'code' ? 'step-active' : ''}}">2 用户确认</text></view>
+    <view wx:if="{{!codeOnly}}" class="steps"><text class="{{step === 'evidence' ? 'step-active' : ''}}">1 完工照片</text><text> → </text><text class="{{step === 'code' ? 'step-active' : ''}}">2 用户确认</text></view>
     <view wx:if="{{step === 'evidence'}}" class="card">
       <view class="title">上传完工照片</view><view class="hint">至少1张，最多{{maxPhotos}}张。请避开个人资料及保密内容。</view>
       <view class="photo-grid">
@@ -22,12 +22,12 @@
     </view>
     <view wx:else class="card">
       <view class="title">输入用户的4位完成码</view>
-      <view class="evidence-note {{mode === 'no_photo' ? 'exception-note' : ''}}">{{mode === 'no_photo' ? '本单未上传照片：用户不方便拍照。完成后将进入特殊单待审核列表。' : '完工照片已上传，请在用户确认维修结果后输入完成码。'}}</view>
+      <view class="evidence-note {{mode === 'no_photo' ? 'exception-note' : ''}}">{{codeOnly ? '请在用户确认维修结果后输入完成码。' : (mode === 'no_photo' ? '本单未上传照片：用户不方便拍照。完成后将进入特殊单待审核列表。' : '完工照片已上传，请在用户确认维修结果后输入完成码。')}}</view>
       <input class="code-input" type="number" maxlength="4" value="{{code}}" bindinput="inputCode" disabled="{{busy}}" placeholder="4位完成码"/>
       <view class="hint">完成码由用户提供，请保留开头的0。</view>
       <view class="error" wx:if="{{error}}">{{error}}</view>
       <button class="primary-button submit-button" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">确认完成维修</button>
-      <button class="skip-photo" disabled="{{busy}}" bindtap="backToPhotos">返回照片步骤</button>
+      <button wx:if="{{!codeOnly}}" class="skip-photo" disabled="{{busy}}" bindtap="backToPhotos">返回照片步骤</button>
     </view>
   </block>
 </view>

@@ -1,0 +1,9 @@
+<view class="portal-page">
+  <view wx:if="{{error}}" class="portal-card portal-state portal-error">{{error}}<button class="portal-secondary" bindtap="load">重新加载</button></view><view wx:elif="{{loading}}" class="portal-state">正在加载案例…</view>
+  <block wx:elif="{{item}}"><view class="case-kicker">REPAIR STORY</view><view class="case-person">{{item.technicianNames}}<text class="case-department">{{item.department}}</text></view><view class="case-detail-title">{{item.title}}</view><view class="case-kind">{{item.faultType}}</view>
+    <view class="portal-card"><view class="case-location">维修地点 · {{item.publicLocation}}</view><view class="case-time">预约时间 · {{item.appointmentTime}}</view><view class="case-time">完成时间 · {{item.completedText}}</view></view>
+    <view class="portal-section">遇到了什么问题</view><view class="case-content">{{item.symptoms}}</view><view class="portal-section">我们怎样处理</view><view class="case-content">{{item.solution}}</view><view class="portal-section">处理结果</view><view class="case-result">{{item.result}}</view>
+    <view wx:if="{{item.photos.length}}" class="portal-section">维修记录</view><image class="case-photo" wx:for="{{item.photos}}" wx:key="id" wx:if="{{item.displayUrl}}" src="{{item.displayUrl}}" mode="aspectFill" data-url="{{item.displayUrl}}" bindtap="preview" binderror="imageFailed" lazy-load/>
+    <view wx:if="{{imageError}}" class="portal-tip" bindtap="load">部分图片加载失败，点击重新加载</view><view class="case-caption">案例仅供参考，具体维修方案需根据设备检测结果确认。</view><button class="portal-primary" bindtap="booking">预约类似维修</button>
+  </block>
+</view>

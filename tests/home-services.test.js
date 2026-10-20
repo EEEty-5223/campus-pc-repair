@@ -43,6 +43,12 @@ function fixture(options = {}) {
 
 const services = { system: '系统与软件', maintenance: '清灰与保养', hardware: '硬件或外设', network: '网络问题' }
 
+test('case booking prefill decodes only known fault types and preserves the rest of a draft',()=>{
+  const draft={formData:{name:'原联系人',phone:'13800001234',location:'原地点',description:'保留描述'},deviceIndex:1,faultIndex:0,timeIndex:2,appointmentDate:'2030-10-19'};
+  const f=fixture({draft}),booking=f.page('pages/booking/booking.js');booking.onLoad({faultType:encodeURIComponent('清灰与保养')});assert.equal(booking.data.faultTypes[booking.data.faultIndex],'清灰与保养');assert.deepEqual(booking.data.formData,draft.formData);assert.equal(f.calls.submissions,0);
+  const invalid=f.page('pages/booking/booking.js');invalid.onLoad({faultType:'%bad'});assert.equal(invalid.data.faultIndex,0);
+});
+
 test('all four service cards lead to booking with matching fault category and no submission', () => {
   const f = fixture()
   const home = f.page('pages/index/index.js')

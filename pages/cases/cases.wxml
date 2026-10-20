@@ -1,0 +1,15 @@
+<view class="portal-page">
+  <view class="case-tabs"><view class="case-tab" bindtap="guides">使用指南</view><view class="case-tab active">维修案例</view></view>
+  <view class="case-kicker">CAMPUS REPAIR STORIES</view><view class="portal-title">每一次维修，都有记录</view><view class="portal-subtitle">看看服务人员怎样解决问题，找到与你相似的电脑故障。</view>
+  <view class="case-search"><input value="{{query}}" bindinput="input" bindconfirm="search" confirm-type="search" maxlength="80" placeholder="搜索故障或维修人员"/><button bindtap="search">搜索</button></view>
+  <view class="case-filters"><picker range="{{departments}}" value="{{departmentIndex}}" bindchange="department"><view>{{departments[departmentIndex]}} ▾</view></picker><picker range="{{faults}}" value="{{faultIndex}}" bindchange="fault"><view>{{faults[faultIndex]}} ▾</view></picker></view>
+  <view wx:if="{{error}}" class="portal-card portal-state portal-error">{{error}}<button class="portal-secondary" bindtap="load">重新加载</button></view>
+  <view wx:elif="{{loading && !items.length}}" class="portal-state">正在整理维修案例…</view>
+  <view wx:elif="{{!items.length}}" class="portal-card portal-state">{{query || departmentIndex || faultIndex ? '没有找到相关案例，换个筛选条件试试。' : '案例正在整理中，发布后会出现在这里。'}}</view>
+  <view class="portal-card case-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+    <view class="case-info"><view class="case-person">{{item.technicianNames}}<text wx:if="{{item.department}}" class="case-department">{{item.department}}</text></view><view class="case-kind">{{item.faultType}}</view><view class="case-location">维修地点 · {{item.publicLocation}}</view><view class="case-time">预约 {{item.appointmentDateText}}<br/>完成 {{item.completedDateText}}</view><view class="case-open">查看详情 ›</view></view>
+    <image wx:if="{{item.coverUrl}}" class="case-cover" src="{{item.coverUrl}}" mode="aspectFill" data-id="{{item.id}}" binderror="imageError" lazy-load/>
+    <view wx:elif="{{item.coverFailed}}" class="case-image-retry" data-id="{{item.id}}" catchtap="retryImage">图片暂未加载<br/>点击重试</view>
+  </view>
+  <button wx:if="{{hasMore}}" class="portal-secondary" bindtap="more" disabled="{{loading}}" loading="{{loading}}">加载更多</button><view wx:if="{{items.length && !hasMore && !loading}}" class="case-end">每一份记录，都是一次经验积累</view>
+</view>

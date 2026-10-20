@@ -47,6 +47,8 @@ function errorText(error) {
     COMPLETION_PHOTO_REQUIRED: '请至少上传一张完工照片。',
     COMPLETION_PHOTO_LIMIT: '照片超过允许数量，请移除多余照片后重试。',
     COMPLETION_PHOTO_INVALID: '照片无效或已过期，请重新选择上传。',
+    COMPLETION_PHOTO_UPLOAD_DISABLED: '完工照片上传已关闭，请返回后重新进入完成维修。',
+    COMPLETION_EVIDENCE_REQUIRED: '完工要求已更新，请返回后重新进入完成维修。',
     IDEMPOTENCY_CONFLICT: '提交内容或预约状态已变化，请返回刷新。',
     APPOINTMENT_FORBIDDEN: '当前账号没有操作这条预约的权限。',
     INVALID_STATUS_TRANSITION: '预约状态已经变化，请返回刷新。',

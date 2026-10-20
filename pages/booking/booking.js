@@ -163,6 +163,9 @@ Page({
         var selectedIndex = this.data.faultTypes.indexOf(SERVICE_FAULTS[service])
         if (selectedIndex >= 0) this.setData({ faultIndex: selectedIndex, servicePrefilled: true })
       }
+      var caseFault = options && options.faultType
+      if (typeof caseFault === 'string') { try { caseFault = decodeURIComponent(caseFault) } catch (_) { caseFault = '' } }
+      if (typeof caseFault === 'string' && this.data.faultTypes.indexOf(caseFault) >= 0) this.setData({ faultIndex: this.data.faultTypes.indexOf(caseFault), servicePrefilled: true })
     }
   },  
 

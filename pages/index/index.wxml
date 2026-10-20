@@ -30,6 +30,9 @@
     </button>
   </view>
 
+  <view class="card consult-entry case-entry" bindtap="goCases">
+    <view class="case-entry-icon">▧</view><view class="consult-entry-main"><view class="consult-entry-title">维修案例</view><view class="consult-entry-desc">看看我们怎样解决电脑问题</view></view><view class="consult-entry-arrow">›</view>
+  </view>
   <view class="section-title">服务流程</view>
   <view class="card process-card">
     <view class="process-item" wx:for="{{steps}}" wx:key="number">

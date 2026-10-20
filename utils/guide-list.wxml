@@ -1,4 +1,5 @@
 <view class="portal-page guide-page">
+  <view wx:if="{{!favorites}}" class="case-tabs"><view class="case-tab active">使用指南</view><view class="case-tab" bindtap="cases">维修案例 ›</view></view>
   <view class="guide-hero"><text class="guide-eyebrow">CAMPUS COMPUTER GUIDE</text><view class="portal-title">{{favorites ? '我的收藏' : '让电脑，更好用'}}</view><view class="portal-subtitle">{{favorites ? '把有用的文章留在手边，下次遇到问题随时翻看。' : '电脑使用技巧与常用应用建议，和你一起少走弯路。'}}</view></view>
   <view class="guide-search"><input value="{{query}}" bindinput="input" bindconfirm="search" confirm-type="search" maxlength="80" placeholder="搜索文章标题或关键词"/><button bindtap="search">搜索</button></view>
   <view class="portal-tags"><view class="portal-tag {{category === item.id ? 'selected' : ''}}" wx:for="{{categories}}" wx:key="id" data-id="{{item.id}}" bindtap="select">{{item.name}}</view></view>

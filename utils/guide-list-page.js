@@ -1,5 +1,6 @@
 var portal=require('./portal-api'), page=require('./portal-page')
 module.exports=function(favorites){return page({
+  cases:function(){wx.navigateTo({url:'/pages/cases/cases'})},
   data:{favorites:!!favorites,loading:true,error:'',items:[],query:'',category:'',hasMore:false,categories:[{id:'',name:'全部文章'},{id:'computer',name:'电脑使用'},{id:'apps',name:'常用应用'}]},
   clearPrivate:function(){this.setData({items:[],hasMore:false})},
   load:function(){return this.loadPage(false)},

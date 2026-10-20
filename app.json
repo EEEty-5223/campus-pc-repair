@@ -22,7 +22,11 @@
     "pages/guide-edit/guide-edit",
     "pages/subscriptions/subscriptions",
     "pages/help/help",
-    "pages/service-terms/service-terms"
+    "pages/service-terms/service-terms",
+    "pages/cases/cases",
+    "pages/case-detail/case-detail",
+    "pages/case-manage/case-manage",
+    "pages/case-edit/case-edit"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0ca9a9",

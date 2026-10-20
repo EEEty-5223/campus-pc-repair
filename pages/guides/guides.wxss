@@ -1,1 +1,3 @@
 @import "../../utils/guide-list.wxss";
+
+@import "../../utils/cases.wxss";

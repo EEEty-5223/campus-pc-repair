@@ -3,7 +3,7 @@ var completion = require('../../utils/completion-api')
 var session = { key: completion.viewerKey }
 
 Page({
-  data: { item: null, loading: true, loadError: '', step: 'evidence', photos: [], mode: 'photos', note: '', code: '', error: '', busy: false, success: false, reviewPending: false, canSkipPhoto: false, maxPhotos: 9 },
+  data: { item: null, loading: true, loadError: '', step: 'evidence', photos: [], mode: 'photos', codeOnly: false, note: '', code: '', error: '', busy: false, success: false, reviewPending: false, canSkipPhoto: false, maxPhotos: 9 },
   onLoad: function (options) { this._id = options && options.id || ''; this._disposed = false },
   onShow: function () {
     var self = this
@@ -12,7 +12,7 @@ Page({
     Promise.resolve(app && app.globalData.loginReady).then(function () {
       if (self._disposed || !self._visible) return
       if (self._viewer && self._viewer !== session.key()) {
-        self._context = null; self._submitKey = ''; self.setData({ item: null, photos: [], mode: 'photos', step: 'evidence', code: '', note: '', busy: false, success: false, canSkipPhoto: false })
+        self._context = null; self._submitKey = ''; self.setData({ item: null, photos: [], mode: 'photos', codeOnly: false, step: 'evidence', code: '', note: '', busy: false, success: false, canSkipPhoto: false })
       }
       self._viewer = session.key()
       if (!self.data.item) return self.loadItem()
@@ -31,12 +31,18 @@ Page({
       if (!item || item.isVoided || item.status !== 'repairing' || item.canProcess !== true) {
         self.setData({ item: null, loadError: '这条预约当前不能提交完工，请返回检查状态与人员分配。' }); return
       }
-      self.setData({ item: item, canSkipPhoto: !!item.isAssignedToMe })
+      return completion.context(self._id).then(function (context) {
+        if (!self.current(viewer) || self._load !== load) return
+        if (!context.available || context.canSubmit !== true) throw { code: 'COMPLETION_UNAVAILABLE' }
+        var codeOnly = context.codeOnly === true && context.photoUploadEnabled === false
+        self._context = context
+        self.setData({ item: item, codeOnly: codeOnly, mode: codeOnly ? 'code_only' : 'photos', step: codeOnly ? 'code' : 'evidence', canSkipPhoto: !codeOnly && !!item.isAssignedToMe, code: '', error: '' })
+      })
     }).catch(function () { if (self.current(viewer) && self._load === load) self.setData({ loadError: '预约暂时无法加载，请返回刷新或重试。' }) })
       .then(function () { if (self.current(viewer) && self._load === load) self.setData({ loading: false }) })
   },
   choosePhotos: function () {
-    if (!this.current(session.key()) || this.data.busy || this._choosing || this.data.photos.length >= this.data.maxPhotos) return
+    if (!this.current(session.key()) || this.data.codeOnly || this.data.busy || this._choosing || this.data.photos.length >= this.data.maxPhotos) return
     var self = this, viewer = session.key()
     this._choosing = true
     wx.chooseMedia({ count: this.data.maxPhotos - this.data.photos.length, mediaType: ['image'], sourceType: ['camera', 'album'],
@@ -57,7 +63,7 @@ Page({
   inputNote: function (event) { if (!this.data.busy) { this.setData({ note: event.detail.value }); this._submitKey = '' } },
   inputCode: function (event) { if (!this.data.busy) { this.setData({ code: String(event.detail.value || '').replace(/\D/g, '').slice(0, 4), error: '' }); this._submitKey = '' } },
   skipPhoto: function () {
-    if (!this.current(session.key()) || !this.data.canSkipPhoto || this.data.busy) return
+    if (!this.current(session.key()) || this.data.codeOnly || !this.data.canSkipPhoto || this.data.busy) return
     var self = this, viewer = session.key()
     function failed() { if (self.current(viewer)) self.setData({ error: '确认窗口未能打开，请重新点击“用户不方便拍照”。' }) }
     try {
@@ -68,7 +74,7 @@ Page({
     } catch (_) { failed() }
   },
   nextStep: function () {
-    if (!this.current(session.key()) || this.data.busy) return
+    if (!this.current(session.key()) || this.data.codeOnly || this.data.busy) return
     if (!this.data.photos.length) { this.setData({ error: '请至少选择一张完工照片，或选择“用户不方便拍照”。' }); return }
     var self = this, viewer = session.key()
     this.setData({ busy: true, error: '' })
@@ -97,17 +103,19 @@ Page({
     }).catch(function (error) { if (self.current(viewer)) self.setData({ error: completion.errorText(error) }) })
       .then(function () { if (self.current(viewer)) self.setData({ busy: false }) })
   },
-  backToPhotos: function () { if (!this.data.busy) { this._submitKey = ''; this.setData({ step: 'evidence', mode: 'photos', code: '', error: '' }) } },
+  backToPhotos: function () { if (!this.data.codeOnly && !this.data.busy) { this._submitKey = ''; this.setData({ step: 'evidence', mode: 'photos', code: '', error: '' }) } },
   submit: function () {
     if (!this.current(session.key()) || this.data.busy || this.data.success) return
     if (!/^\d{4}$/.test(this.data.code)) { this.setData({ error: '请输入用户提供的4位完成码。' }); return }
     if (this.data.mode === 'photos' && (!this.data.photos.length || this.data.photos.some(function (p) { return !p.id }))) { this.setData({ error: '请返回上一步，完成照片上传。' }); return }
     if (this.data.mode === 'no_photo' && !this.data.canSkipPhoto) return
+    if (this.data.mode === 'code_only' && !this.data.codeOnly) return
     var self = this, viewer = session.key()
     this._submitKey = this._submitKey || completion.requestKey()
     var body = { completionCode: this.data.code, evidenceType: this.data.mode, photoIds: this.data.mode === 'photos' ? this.data.photos.map(function (p) { return p.id }) : [], noPhotoReason: this.data.mode === 'no_photo' ? '用户不方便拍照' : '', note: this.data.note.trim(), requestKey: this._submitKey }
     this.setData({ busy: true, error: '' })
-    return completion.submit(this._id, body).then(function (result) {
+    var request = this.data.codeOnly ? api.updateStatus(this._id, 'completed', this.data.code) : completion.submit(this._id, body)
+    return request.then(function (result) {
       if (!self.current(viewer)) return
       if (result.status !== 'completed' || (body.evidenceType === 'no_photo' && ['pending', 'approved', 'rejected'].indexOf(result.reviewStatus) === -1)) throw new Error('invalid completion response')
       self.setData({ success: true, code: '', reviewPending: result.reviewStatus === 'pending' })
